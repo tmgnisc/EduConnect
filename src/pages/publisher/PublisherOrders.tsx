@@ -39,11 +39,10 @@ export default function PublisherOrders() {
   const filteredOrders = useMemo(() => {
     const term = searchTerm.toLowerCase();
     return orders.filter((order) => {
-      return (
-        order.id.toLowerCase().includes(term) ||
-        order.schoolName.toLowerCase().includes(term) ||
-        order.items.some((item) => item.bookTitle.toLowerCase().includes(term))
-      );
+      const orderIdMatch = String(order.id).toLowerCase().includes(term);
+      const schoolMatch = order.schoolName.toLowerCase().includes(term);
+      const bookMatch = order.items.some((item) => item.bookTitle.toLowerCase().includes(term));
+      return term ? orderIdMatch || schoolMatch || bookMatch : true;
     });
   }, [orders, searchTerm]);
 
