@@ -1,119 +1,150 @@
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Eye, Package } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { ordersApi } from '@/services/api';
+import { Order } from '@/types';
+import { toast } from 'sonner';
+import { Package, Search, Layers } from 'lucide-react';
+
+const statusColorMap: Record<Order['status'], string> = {
+  pending: 'bg-secondary-light text-secondary',
+  confirmed: 'bg-primary-light text-primary',
+  delivered: 'bg-accent-light text-accent',
+  cancelled: 'bg-destructive/10 text-destructive',
+};
+
+const paymentColorMap: Record<Order['paymentStatus'], string> = {
+  pending: 'bg-secondary-light text-secondary',
+  completed: 'bg-primary-light text-primary',
+  failed: 'bg-destructive/10 text-destructive',
+};
 
 export default function SchoolOrders() {
-  const orders = [
-    {
-      id: 'ORD-001',
-      items: 3,
-      total: 1500,
-      status: 'delivered',
-      paymentStatus: 'completed',
-      createdAt: '2024-01-20',
-      deliveredAt: '2024-01-25',
-    },
-    {
-      id: 'ORD-002',
-      items: 5,
-      total: 2500,
-      status: 'confirmed',
-      paymentStatus: 'completed',
-      createdAt: '2024-01-21',
-    },
-    {
-      id: 'ORD-003',
-      items: 2,
-      total: 1000,
-      status: 'pending',
-      paymentStatus: 'pending',
-      createdAt: '2024-01-22',
-    },
-  ];
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<Order['status'] | 'all'>('all');
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'confirmed':
-      case 'delivered':
-        return 'bg-primary-light text-primary';
-      case 'pending':
-        return 'bg-secondary-light text-secondary';
-      case 'cancelled':
-        return 'bg-destructive/10 text-destructive';
-      default:
-        return '';
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const response = await ordersApi.getAll();
+      setOrders(response.data || []);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to load orders');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getPaymentColor = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'bg-primary-light text-primary';
-      case 'pending':
-        return 'bg-secondary-light text-secondary';
-      case 'failed':
-        return 'bg-destructive/10 text-destructive';
-      default:
-        return '';
-    }
-  };
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  const filteredOrders = useMemo(() => {
+    return orders.filter((order) => {
+      const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
+      const term = searchTerm.toLowerCase();
+      const matchesTerm =
+        order.id.toLowerCase().includes(term) ||
+        order.items.some((item) => item.bookTitle.toLowerCase().includes(term));
+      return matchesStatus && matchesTerm;
+    });
+  }, [orders, searchTerm, statusFilter]);
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">My Orders</h1>
-        <p className="text-muted-foreground mt-2">
-          Track your book orders
-        </p>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">My Orders</h1>
+          <p className="text-muted-foreground mt-2">Track the status of all your purchases.</p>
+        </div>
+        <div className="flex gap-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search orders or books..."
+              className="pl-9"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+            />
+          </div>
+          <select
+            className="border rounded-md px-3 py-2 text-sm bg-background"
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value as Order['status'] | 'all')}
+          >
+            <option value="all">All statuses</option>
+            <option value="pending">Pending</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="delivered">Delivered</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
       </div>
 
-      <div className="space-y-4">
-        {orders.map((order) => (
-          <Card key={order.id} className="shadow-soft">
-            <CardContent className="p-6">
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <div className="flex items-center gap-4 flex-1">
-                  <div className="w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center">
-                    <Package className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground text-lg">{order.id}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {order.items} items • Ordered on {order.createdAt}
-                    </p>
-                    {order.deliveredAt && (
+      {loading ? (
+        <Card>
+          <CardContent className="p-6 text-muted-foreground flex items-center gap-2">
+            <Layers className="w-4 h-4 animate-spin" />
+            Loading orders...
+          </CardContent>
+        </Card>
+      ) : filteredOrders.length === 0 ? (
+        <Card>
+          <CardContent className="p-6 text-center text-muted-foreground">
+            {orders.length === 0 ? 'No orders placed yet.' : 'No orders match your filters.'}
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {filteredOrders.map((order) => (
+            <Card key={order.id} className="shadow-soft">
+              <CardContent className="p-6 space-y-4">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center">
+                      <Package className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-foreground text-lg">Order #{order.id}</p>
                       <p className="text-sm text-muted-foreground">
-                        Delivered on {order.deliveredAt}
+                        Placed on {new Date(order.createdAt).toLocaleDateString()} • {order.items.length} items
                       </p>
-                    )}
-                    <div className="flex items-center gap-2 mt-2">
-                      <Badge className={`text-xs ${getStatusColor(order.status)}`}>
-                        {order.status}
-                      </Badge>
-                      <Badge className={`text-xs ${getPaymentColor(order.paymentStatus)}`}>
-                        {order.paymentStatus}
-                      </Badge>
+                      <div className="flex gap-2 mt-2 flex-wrap">
+                        <Badge className={statusColorMap[order.status]}>{order.status}</Badge>
+                        <Badge className={paymentColorMap[order.paymentStatus]}>{order.paymentStatus}</Badge>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="flex flex-col md:flex-row items-start md:items-center gap-3">
                   <div className="text-right">
-                    <p className="text-lg font-bold text-foreground">
-                      NPR {order.total}
-                    </p>
-                    <p className="text-sm text-muted-foreground">Total</p>
+                    <p className="text-lg font-bold text-foreground">NPR {order.total.toFixed(2)}</p>
+                    <p className="text-sm text-muted-foreground">Total Amount</p>
                   </div>
-                  <Button variant="outline" size="sm">
-                    <Eye className="w-4 h-4 mr-2" />
-                    View Details
-                  </Button>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                <div className="border rounded-xl p-4 bg-muted/40 space-y-2">
+                  {order.items.map((item) => (
+                    <div key={item.bookId} className="flex items-center justify-between text-sm">
+                      <div>
+                        <p className="font-medium text-foreground">{item.bookTitle}</p>
+                        <p className="text-muted-foreground text-xs">ISBN: {item.bookId}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium">NPR {(item.price * item.quantity).toFixed(2)}</p>
+                        <p className="text-muted-foreground text-xs">
+                          Qty: {item.quantity} × NPR {item.price.toFixed(2)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

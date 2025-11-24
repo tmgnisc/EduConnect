@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { usersApi, booksApi } from '@/services/api';
-import { User, Book } from '@/types';
+import { usersApi, booksApi, ordersApi } from '@/services/api';
+import { User, Book, Order } from '@/types';
 import { toast } from 'sonner';
 import { useCartStore } from '@/store/cartStore';
 import { ShoppingCart, Users, BookOpen, LibraryBig, Loader2 } from 'lucide-react';
@@ -17,6 +17,8 @@ export default function SchoolDashboard() {
   const [selectedPublisherId, setSelectedPublisherId] = useState<string | null>(null);
   const [loadingPublishers, setLoadingPublishers] = useState(true);
   const [loadingBooks, setLoadingBooks] = useState(true);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loadingOrders, setLoadingOrders] = useState(true);
 
   const fetchPublishers = async () => {
     try {
@@ -46,9 +48,22 @@ export default function SchoolDashboard() {
     }
   };
 
+  const fetchOrders = async () => {
+    try {
+      setLoadingOrders(true);
+      const response = await ordersApi.getAll();
+      setOrders(response.data || []);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to load orders');
+    } finally {
+      setLoadingOrders(false);
+    }
+  };
+
   useEffect(() => {
     fetchPublishers();
     fetchBooks();
+    fetchOrders();
   }, []);
 
   const selectedPublisherBooks = useMemo(() => {
@@ -69,6 +84,12 @@ export default function SchoolDashboard() {
         value: loadingBooks ? '—' : books.length.toString(),
         icon: BookOpen,
         color: 'bg-secondary-light text-secondary',
+      },
+      {
+        title: 'My Orders',
+        value: loadingOrders ? '—' : orders.length.toString(),
+        icon: LibraryBig,
+        color: 'bg-accent-light text-accent',
       },
       {
         title: 'In Cart',
@@ -221,6 +242,49 @@ export default function SchoolDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="shadow-soft">
+        <CardHeader>
+          <CardTitle>Recent Orders</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loadingOrders ? (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Loading orders...
+            </div>
+          ) : orders.length === 0 ? (
+            <div className="text-center text-muted-foreground py-8">No orders placed yet.</div>
+          ) : (
+            <div className="space-y-4">
+              {orders.slice(0, 5).map((order) => (
+                <div
+                  key={order.id}
+                  className="p-4 border rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-3"
+                >
+                  <div>
+                    <p className="font-semibold text-foreground">Order #{order.id}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(order.createdAt).toLocaleDateString()} • {order.items.length} items
+                    </p>
+                    <div className="text-sm text-muted-foreground mt-1">
+                      Total: <span className="font-medium text-foreground">NPR {order.total.toFixed(2)}</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 flex-wrap">
+                    <Badge variant="outline" className="capitalize">
+                      {order.status}
+                    </Badge>
+                    <Badge className="bg-primary-light text-primary capitalize">
+                      {order.paymentStatus}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
