@@ -25,6 +25,7 @@ const publisherLinks = [
   { to: '/publisher', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/publisher/books', label: 'My Books', icon: BookOpen },
   { to: '/publisher/orders', label: 'Orders', icon: ShoppingCart },
+  { to: '/publisher/schools', label: 'Schools', icon: Users },
   { to: '/publisher/analytics', label: 'Analytics', icon: BarChart3 },
 ];
 

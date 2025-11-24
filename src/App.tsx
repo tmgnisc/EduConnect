@@ -27,6 +27,7 @@ import PublisherDashboard from "./pages/publisher/PublisherDashboard";
 import PublisherBooks from "./pages/publisher/PublisherBooks";
 import PublisherOrders from "./pages/publisher/PublisherOrders";
 import PublisherAnalytics from "./pages/publisher/PublisherAnalytics";
+import PublisherSchools from "./pages/publisher/PublisherSchools";
 
 // School Pages
 import SchoolDashboard from "./pages/school/SchoolDashboard";
@@ -85,6 +86,7 @@ const App = () => {
               <Route index element={<PublisherDashboard />} />
               <Route path="books" element={<PublisherBooks />} />
               <Route path="orders" element={<PublisherOrders />} />
+              <Route path="schools" element={<PublisherSchools />} />
               <Route path="analytics" element={<PublisherAnalytics />} />
             </Route>
 
