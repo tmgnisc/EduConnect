@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ordersApi } from '@/services/api';
 import { Order } from '@/types';
 import { toast } from 'sonner';
@@ -21,6 +22,8 @@ export default function PublisherSchools() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [selectedSchool, setSelectedSchool] = useState<SchoolSummary | null>(null);
 
   const fetchOrders = async () => {
     try {
@@ -128,7 +131,14 @@ export default function PublisherSchools() {
                       </Badge>
                       <Badge variant="secondary">NPR {school.totalSpent.toFixed(2)}</Badge>
                     </div>
-                    <Button variant="outline" className="w-full">
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => {
+                        setSelectedSchool(school);
+                        setDetailsOpen(true);
+                      }}
+                    >
                       View Details
                     </Button>
                   </CardContent>
@@ -138,6 +148,69 @@ export default function PublisherSchools() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{selectedSchool?.schoolName ?? 'School Details'}</DialogTitle>
+            <DialogDescription>
+              Purchase history and engagement for this school.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedSchool && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <Card>
+                  <CardContent className="py-4">
+                    <p className="text-xs text-muted-foreground">Total Orders</p>
+                    <p className="text-xl font-semibold">{selectedSchool.totalOrders}</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="py-4">
+                    <p className="text-xs text-muted-foreground">Books Purchased</p>
+                    <p className="text-xl font-semibold">{selectedSchool.totalBooks}</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="py-4">
+                    <p className="text-xs text-muted-foreground">Total Spend</p>
+                    <p className="text-xl font-semibold">NPR {selectedSchool.totalSpent.toFixed(2)}</p>
+                  </CardContent>
+                </Card>
+              </div>
+              <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
+                {orders
+                  .filter((order) => String(order.schoolId) === selectedSchool.schoolId)
+                  .map((order) => (
+                    <Card key={order.id}>
+                      <CardContent className="py-4 flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-foreground">Order #{order.id}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(order.createdAt).toLocaleDateString()} •{' '}
+                            {(order.items?.length ?? 0)} books
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <Badge variant="outline" className="capitalize mb-1">
+                            {order.status}
+                          </Badge>
+                          <p className="text-sm font-semibold text-foreground">
+                            NPR {Number(order.total ?? 0).toFixed(2)}
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                {orders.filter((order) => String(order.schoolId) === selectedSchool.schoolId).length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-4">No order history available.</p>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

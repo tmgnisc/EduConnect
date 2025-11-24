@@ -211,6 +211,124 @@ export default function AdminDashboard() {
             )}
           </CardContent>
         </Card>
+
+        <Card className="shadow-soft">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Recent Orders</CardTitle>
+            <Button variant="outline" size="sm" onClick={() => navigate('/admin/orders')}>
+              View Details
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {loading.orders ? (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Loading orders...
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {orders.slice(0, 5).map((order) => (
+                  <div
+                    key={order.id}
+                    className="flex items-center justify-between p-4 bg-muted rounded-lg border"
+                  >
+                    <div>
+                      <p className="font-medium">Order #{order.id}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {order.schoolName} • {new Date(order.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <Badge variant="outline" className="capitalize mb-1">
+                        {order.status}
+                      </Badge>
+                      <p className="text-sm font-semibold text-foreground">
+                        NPR {Number(order.total ?? 0).toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="shadow-soft">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Latest Books</CardTitle>
+            <Button variant="outline" size="sm" onClick={() => navigate('/admin/books')}>
+              View Details
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {loading.books ? (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Loading books...
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {books.slice(0, 5).map((book) => (
+                  <div
+                    key={book.id}
+                    className="flex items-center justify-between p-4 bg-muted rounded-lg border"
+                  >
+                    <div>
+                      <p className="font-medium">{book.title}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Grade {book.grade} • {book.publisherName}
+                      </p>
+                    </div>
+                    <Badge variant="outline">NPR {Number(book.price ?? 0).toFixed(2)}</Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-soft">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Revenue Snapshot</CardTitle>
+            <Button variant="outline" size="sm" onClick={() => navigate('/admin/reports')}>
+              View Report
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {loading.orders ? (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Computing metrics...
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">Total Revenue</p>
+                  <p className="text-lg font-semibold text-foreground">
+                    NPR {orders.reduce((sum, order) => sum + Number(order.total ?? 0), 0).toFixed(2)}
+                  </p>
+                </div>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">Average Order Value</p>
+                  <p className="text-lg font-semibold text-foreground">
+                    NPR{' '}
+                    {orders.length
+                      ? (orders.reduce((sum, order) => sum + Number(order.total ?? 0), 0) / orders.length).toFixed(2)
+                      : '0.00'}
+                  </p>
+                </div>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">Pending Orders</p>
+                  <Badge variant="outline">
+                    {orders.filter((order) => order.status === 'pending').length} pending
+                  </Badge>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
