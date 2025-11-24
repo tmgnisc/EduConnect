@@ -80,14 +80,14 @@ export default function PublisherOrders() {
             </div>
           ) : (
             <div className="space-y-4">
-              {filteredOrders.map((order) => {
-                const publisherItems = order.items.filter((item) => item.bookId);
+                {filteredOrders.map((order) => {
+                const publisherItems = (order.items || []).filter((item) => item.bookId);
                 return (
                   <div
                     key={order.id}
                     className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 bg-muted rounded-lg gap-4"
                   >
-                    <div className="flex items-start gap-4 flex-1">
+                <div className="flex items-start gap-4 flex-1">
                       <div className="w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center">
                         <ShoppingCart className="w-6 h-6 text-white" />
                       </div>
@@ -95,7 +95,7 @@ export default function PublisherOrders() {
                         <p className="font-medium text-foreground">Order #{order.id}</p>
                         <p className="text-sm text-muted-foreground">{order.schoolName}</p>
                         <div className="text-xs text-muted-foreground mt-1">
-                          {publisherItems.length} of {order.items.length} items relate to your catalog.
+                      {publisherItems.length} of {(order.items?.length ?? 0)} items relate to your catalog.
                         </div>
                         <div className="flex flex-wrap gap-2 mt-2">
                           <Badge className={statusColorMap[order.status]}>{order.status}</Badge>

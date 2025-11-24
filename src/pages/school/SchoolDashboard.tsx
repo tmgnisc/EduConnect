@@ -265,10 +265,13 @@ export default function SchoolDashboard() {
                   <div>
                     <p className="font-semibold text-foreground">Order #{order.id}</p>
                     <p className="text-sm text-muted-foreground">
-                      {new Date(order.createdAt).toLocaleDateString()} • {order.items.length} items
+                      {new Date(order.createdAt).toLocaleDateString()} • {(order.items?.length ?? 0)} items
                     </p>
                     <div className="text-sm text-muted-foreground mt-1">
-                      Total: <span className="font-medium text-foreground">NPR {order.total.toFixed(2)}</span>
+                      Total:{' '}
+                      <span className="font-medium text-foreground">
+                        NPR {Number(order.total ?? 0).toFixed(2)}
+                      </span>
                     </div>
                   </div>
                   <div className="flex gap-2 flex-wrap">

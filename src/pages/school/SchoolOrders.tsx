@@ -110,7 +110,7 @@ export default function SchoolOrders() {
                     <div>
                       <p className="font-semibold text-foreground text-lg">Order #{order.id}</p>
                       <p className="text-sm text-muted-foreground">
-                        Placed on {new Date(order.createdAt).toLocaleDateString()} • {order.items.length} items
+                        Placed on {new Date(order.createdAt).toLocaleDateString()} • {(order.items?.length ?? 0)} items
                       </p>
                       <div className="flex gap-2 mt-2 flex-wrap">
                         <Badge className={statusColorMap[order.status]}>{order.status}</Badge>
@@ -119,12 +119,12 @@ export default function SchoolOrders() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-bold text-foreground">NPR {order.total.toFixed(2)}</p>
+                    <p className="text-lg font-bold text-foreground">NPR {Number(order.total ?? 0).toFixed(2)}</p>
                     <p className="text-sm text-muted-foreground">Total Amount</p>
                   </div>
                 </div>
                 <div className="border rounded-xl p-4 bg-muted/40 space-y-2">
-                  {order.items.map((item) => (
+                  {(order.items || []).map((item) => (
                     <div key={item.bookId} className="flex items-center justify-between text-sm">
                       <div>
                         <p className="font-medium text-foreground">{item.bookTitle}</p>
