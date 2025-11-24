@@ -23,7 +23,7 @@ export default function SchoolDashboard() {
       setLoadingPublishers(true);
       const response = await usersApi.getAll();
       const approvedPublishers = (response.data || []).filter(
-        (user: User) => user.role === 'publisher' && user.status === 'approved'
+        (user: User) => user.role === 'publisher'
       );
       setPublishers(approvedPublishers);
       if (approvedPublishers.length && !selectedPublisherId) {
@@ -94,9 +94,14 @@ export default function SchoolDashboard() {
           <h1 className="text-3xl font-bold text-foreground">School Dashboard</h1>
           <p className="text-muted-foreground mt-2">Browse publishers, explore their catalogs, and place orders.</p>
         </div>
-        <Button variant="outline" onClick={() => (window.location.href = '/school/cart')}>
-          View Cart ({cartItems.length})
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setSelectedPublisherId(null)}>
+            Browse Publishers
+          </Button>
+          <Button variant="default" onClick={() => (window.location.href = '/school/cart')}>
+            View Cart ({cartItems.length})
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

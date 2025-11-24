@@ -6,6 +6,7 @@ const mapUser = (row) => ({
   email: row.email,
   role: row.role,
   status: row.status,
+  organizationName: row.organization_name,
   documentUrl: row.document_url,
   createdAt: row.created_at,
 });
@@ -52,7 +53,17 @@ const createUser = async ({
 
 const getAllUsers = async () => {
   const [rows] = await pool.query(
-    'SELECT id, name, email, role, status, document_url, created_at FROM users ORDER BY created_at DESC'
+    'SELECT id, name, email, role, status, organization_name, document_url, created_at FROM users ORDER BY created_at DESC'
+  );
+  return rows.map(mapUser);
+};
+
+const getPublishers = async () => {
+  const [rows] = await pool.query(
+    `SELECT id, name, email, role, status, organization_name, document_url, created_at
+     FROM users
+     WHERE role = 'publisher'
+     ORDER BY created_at DESC`
   );
   return rows.map(mapUser);
 };
@@ -67,6 +78,7 @@ module.exports = {
   findUserById,
   createUser,
   getAllUsers,
+  getPublishers,
   updateUserStatus,
 };
 

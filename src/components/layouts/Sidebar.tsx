@@ -30,7 +30,6 @@ const publisherLinks = [
 
 const schoolLinks = [
   { to: '/school', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/school/books', label: 'Browse Books', icon: BookOpen },
   { to: '/school/cart', label: 'Cart', icon: ShoppingCart },
   { to: '/school/orders', label: 'My Orders', icon: FileText },
   { to: '/school/progress', label: 'Progress', icon: CheckSquare },

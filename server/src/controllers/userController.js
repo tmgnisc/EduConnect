@@ -1,4 +1,4 @@
-const { getAllUsers, updateUserStatus } = require('../services/userService');
+const { getAllUsers, updateUserStatus, getPublishers } = require('../services/userService');
 
 const listUsers = async (req, res, next) => {
   try {
@@ -19,8 +19,22 @@ const changeUserStatus = async (req, res, next) => {
   }
 };
 
+const listPublishers = async (req, res, next) => {
+  try {
+    const publishers = await getPublishers();
+    const filtered =
+      req.user.role === 'school'
+        ? publishers.filter((publisher) => publisher.status === 'approved')
+        : publishers;
+    res.json({ data: filtered });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   listUsers,
   changeUserStatus,
+  listPublishers,
 };
 
