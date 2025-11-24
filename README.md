@@ -58,8 +58,13 @@ All backend secrets live in `server/.env` (see `server/.env.example` for the exa
    ```sql
    CREATE DATABASE IF NOT EXISTS EduConnect;
    ```
-3. Load the schema:
+3. Create tables (pick one):
    ```bash
+   # Recommended: automated script
+   cd server
+   npm run db:init
+
+   # Alternatively: run the SQL manually
    mysql -u root -p EduConnect < server/database/schema.sql
    ```
 
