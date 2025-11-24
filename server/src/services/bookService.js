@@ -1,13 +1,14 @@
 const { pool } = require('../config/db');
 
 const mapBook = (row) => ({
-  id: row.id,
+  id: String(row.id),
   title: row.title,
   grade: row.grade,
   subject: row.subject,
+  author: row.author,
   isbn: row.isbn,
-  price: row.price,
-  publisherId: row.publisher_id,
+  price: Number(row.price),
+  publisherId: String(row.publisher_id),
   publisherName: row.publisher_name,
   description: row.description,
   coverImage: row.cover_image,
@@ -28,6 +29,7 @@ const createBook = async ({
   title,
   grade,
   subject,
+  author,
   isbn,
   price,
   publisherId,
@@ -37,9 +39,20 @@ const createBook = async ({
 }) => {
   const [result] = await pool.query(
     `INSERT INTO books (
-      title, grade, subject, isbn, price, publisher_id, publisher_name, description, cover_image
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [title, grade, subject, isbn, price, publisherId, publisherName, description || null, coverImage || null]
+      title, grade, subject, author, isbn, price, publisher_id, publisher_name, description, cover_image
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      title,
+      grade,
+      subject,
+      author,
+      isbn,
+      price,
+      publisherId,
+      publisherName,
+      description || null,
+      coverImage || null,
+    ]
   );
 
   return getBookById(result.insertId);
