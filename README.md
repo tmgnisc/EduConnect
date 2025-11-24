@@ -31,6 +31,7 @@ The API is served from `http://localhost:5000`. The frontend already points to t
 ### Backend Highlights
 
 - **Auth:** Email/password registration & login with bcrypt + JWT. Admin/publisher accounts default to `pending` status; schools are auto-approved for a quick start.
+- **Document verification:** Publisher and school registrations upload a verification image that is stored on Cloudinary and reviewable by the super admin.
 - **Role-based access:** Middleware guards ensure only authorized roles can hit sensitive endpoints.
 - **Database:** MySQL connection pool with sample schema (`server/database/schema.sql`) covering users, books, orders, and order items.
 - **Books & Orders:** CRUD helpers for books (with optional Cloudinary uploads) and transactional order creation with line items.
