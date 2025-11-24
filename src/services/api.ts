@@ -114,6 +114,11 @@ export const usersApi = {
     return response.data;
   },
 
+  getPublishers: async () => {
+    const response = await apiClient.get("/users/publishers");
+    return response.data;
+  },
+
   updateStatus: async (id: string, status: string) => {
     const response = await apiClient.patch(`/users/${id}/status`, { status });
     return response.data;

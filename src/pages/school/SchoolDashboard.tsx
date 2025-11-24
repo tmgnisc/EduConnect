@@ -21,13 +21,11 @@ export default function SchoolDashboard() {
   const fetchPublishers = async () => {
     try {
       setLoadingPublishers(true);
-      const response = await usersApi.getAll();
-      const approvedPublishers = (response.data || []).filter(
-        (user: User) => user.role === 'publisher'
-      );
-      setPublishers(approvedPublishers);
-      if (approvedPublishers.length && !selectedPublisherId) {
-        setSelectedPublisherId(approvedPublishers[0].id);
+      const response = await usersApi.getPublishers();
+      const availablePublishers = response.data || [];
+      setPublishers(availablePublishers);
+      if (availablePublishers.length && !selectedPublisherId) {
+        setSelectedPublisherId(availablePublishers[0].id);
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to load publishers');

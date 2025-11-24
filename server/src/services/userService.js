@@ -1,7 +1,7 @@
 const { pool } = require('../config/db');
 
 const mapUser = (row) => ({
-  id: row.id,
+  id: String(row.id),
   name: row.name,
   email: row.email,
   role: row.role,
