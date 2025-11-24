@@ -17,12 +17,27 @@ import SchoolRegister from "./pages/register/SchoolRegister";
 
 // Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminBooks from "./pages/admin/AdminBooks";
+import AdminOrders from "./pages/admin/AdminOrders";
+import AdminReports from "./pages/admin/AdminReports";
 
 // Publisher Pages
 import PublisherDashboard from "./pages/publisher/PublisherDashboard";
+import PublisherBooks from "./pages/publisher/PublisherBooks";
+import PublisherOrders from "./pages/publisher/PublisherOrders";
+import PublisherAnalytics from "./pages/publisher/PublisherAnalytics";
 
 // School Pages
 import SchoolDashboard from "./pages/school/SchoolDashboard";
+import SchoolBooks from "./pages/school/SchoolBooks";
+import SchoolCart from "./pages/school/SchoolCart";
+import SchoolOrders from "./pages/school/SchoolOrders";
+import SchoolProgress from "./pages/school/SchoolProgress";
+import SchoolActivities from "./pages/school/SchoolActivities";
+
+// Settings
+import Settings from "./pages/Settings";
 
 import NotFound from "./pages/NotFound";
 
@@ -52,6 +67,10 @@ const App = () => {
               }
             >
               <Route index element={<AdminDashboard />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="books" element={<AdminBooks />} />
+              <Route path="orders" element={<AdminOrders />} />
+              <Route path="reports" element={<AdminReports />} />
             </Route>
 
             {/* Publisher Routes */}
@@ -64,6 +83,9 @@ const App = () => {
               }
             >
               <Route index element={<PublisherDashboard />} />
+              <Route path="books" element={<PublisherBooks />} />
+              <Route path="orders" element={<PublisherOrders />} />
+              <Route path="analytics" element={<PublisherAnalytics />} />
             </Route>
 
             {/* School Routes */}
@@ -76,6 +98,23 @@ const App = () => {
               }
             >
               <Route index element={<SchoolDashboard />} />
+              <Route path="books" element={<SchoolBooks />} />
+              <Route path="cart" element={<SchoolCart />} />
+              <Route path="orders" element={<SchoolOrders />} />
+              <Route path="progress" element={<SchoolProgress />} />
+              <Route path="activities" element={<SchoolActivities />} />
+            </Route>
+
+            {/* Settings Route (accessible by all authenticated users) */}
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Settings />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

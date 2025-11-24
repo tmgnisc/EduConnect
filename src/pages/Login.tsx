@@ -7,16 +7,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { toast } from 'sonner';
-import { GraduationCap } from 'lucide-react';
+import { GraduationCap, Info } from 'lucide-react';
 import { z } from 'zod';
+import { useState } from 'react';
 
 type LoginForm = z.infer<typeof loginSchema>;
 
 export default function Login() {
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
-  const user = useAuthStore((state) => state.user);
+  const [showDummyCredentials, setShowDummyCredentials] = useState(false);
 
   const {
     register,
@@ -31,9 +33,11 @@ export default function Login() {
       await login(data.email, data.password);
       toast.success('Login successful!');
       
+      // Get user after login to determine redirect
+      const currentUser = useAuthStore.getState().user;
       const redirectPath = 
-        user?.role === 'admin' ? '/admin' :
-        user?.role === 'publisher' ? '/publisher' :
+        currentUser?.role === 'admin' ? '/admin' :
+        currentUser?.role === 'publisher' ? '/publisher' :
         '/school';
       
       navigate(redirectPath);
@@ -53,6 +57,26 @@ export default function Login() {
           <CardDescription>Sign in to access your dashboard</CardDescription>
         </CardHeader>
         <CardContent>
+          <Alert className="mb-4 bg-muted border-border">
+            <Info className="h-4 w-4" />
+            <AlertTitle className="text-sm font-medium">Dummy Login Credentials</AlertTitle>
+            <AlertDescription className="text-xs mt-1">
+              <button
+                type="button"
+                onClick={() => setShowDummyCredentials(!showDummyCredentials)}
+                className="text-primary hover:underline"
+              >
+                {showDummyCredentials ? 'Hide' : 'Show'} test credentials
+              </button>
+              {showDummyCredentials && (
+                <div className="mt-2 space-y-1 text-muted-foreground">
+                  <p><strong>Admin:</strong> admin@educonnect.com / password123</p>
+                  <p><strong>Publisher:</strong> publisher@educonnect.com / password123</p>
+                  <p><strong>School:</strong> school@educonnect.com / password123</p>
+                </div>
+              )}
+            </AlertDescription>
+          </Alert>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
