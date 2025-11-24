@@ -111,9 +111,14 @@ export default function AdminDashboard() {
           <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
           <p className="text-muted-foreground mt-2">Real-time overview of users, books, and orders.</p>
         </div>
-        <Button variant="outline" onClick={() => navigate('/admin/reports')}>
-          View Reports
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => navigate('/admin/books')}>
+            Manage Books
+          </Button>
+          <Button variant="outline" onClick={() => navigate('/admin/orders')}>
+            Manage Orders
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">

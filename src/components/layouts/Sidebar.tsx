@@ -18,7 +18,6 @@ const adminLinks = [
   { to: '/admin/users', label: 'Manage Users', icon: Users },
   { to: '/admin/books', label: 'All Books', icon: BookOpen },
   { to: '/admin/orders', label: 'All Orders', icon: ShoppingCart },
-  { to: '/admin/reports', label: 'Reports', icon: BarChart3 },
 ];
 
 const publisherLinks = [
@@ -26,7 +25,6 @@ const publisherLinks = [
   { to: '/publisher/books', label: 'My Books', icon: BookOpen },
   { to: '/publisher/orders', label: 'Orders', icon: ShoppingCart },
   { to: '/publisher/schools', label: 'Schools', icon: Users },
-  { to: '/publisher/analytics', label: 'Analytics', icon: BarChart3 },
 ];
 
 const schoolLinks = [

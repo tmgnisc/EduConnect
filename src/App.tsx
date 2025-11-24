@@ -20,13 +20,11 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminBooks from "./pages/admin/AdminBooks";
 import AdminOrders from "./pages/admin/AdminOrders";
-import AdminReports from "./pages/admin/AdminReports";
 
 // Publisher Pages
 import PublisherDashboard from "./pages/publisher/PublisherDashboard";
 import PublisherBooks from "./pages/publisher/PublisherBooks";
 import PublisherOrders from "./pages/publisher/PublisherOrders";
-import PublisherAnalytics from "./pages/publisher/PublisherAnalytics";
 import PublisherSchools from "./pages/publisher/PublisherSchools.tsx";
 
 // School Pages
@@ -71,7 +69,6 @@ const App = () => {
               <Route path="users" element={<AdminUsers />} />
               <Route path="books" element={<AdminBooks />} />
               <Route path="orders" element={<AdminOrders />} />
-              <Route path="reports" element={<AdminReports />} />
             </Route>
 
             {/* Publisher Routes */}
@@ -87,7 +84,6 @@ const App = () => {
               <Route path="books" element={<PublisherBooks />} />
               <Route path="orders" element={<PublisherOrders />} />
               <Route path="schools" element={<PublisherSchools />} />
-              <Route path="analytics" element={<PublisherAnalytics />} />
             </Route>
 
             {/* School Routes */}
