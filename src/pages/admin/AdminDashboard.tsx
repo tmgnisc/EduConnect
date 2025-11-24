@@ -167,3 +167,51 @@ export default function AdminDashboard() {
                   </div>
                 ))}
               </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-soft">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Recent Orders</CardTitle>
+            <Button variant="outline" size="sm" onClick={() => navigate('/admin/orders')}>
+              View Details
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {loading.orders ? (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Loading orders...
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {orders.slice(0, 5).map((order) => (
+                  <div
+                    key={order.id}
+                    className="flex items-center justify-between p-4 bg-muted rounded-lg border"
+                  >
+                    <div>
+                      <p className="font-medium">Order #{order.id}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {order.schoolName} • {new Date(order.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <Badge variant="outline" className="capitalize mb-1">
+                        {order.status}
+                      </Badge>
+                      <p className="text-sm font-semibold text-foreground">
+                        NPR {Number(order.total ?? 0).toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
