@@ -1,31 +1,66 @@
 const { pool } = require('../config/db');
 
 const mapOrder = (row) => ({
-  id: row.id,
-  schoolId: row.school_id,
+  id: String(row.id),
+  schoolId: String(row.school_id),
   schoolName: row.school_name,
-  total: row.total,
+  total: Number(row.total),
   status: row.status,
   paymentStatus: row.payment_status,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
+  items: [],
 });
+
+const mapOrderItem = (row) => ({
+  orderId: String(row.order_id),
+  bookId: String(row.book_id),
+  bookTitle: row.book_title,
+  quantity: row.quantity,
+  price: Number(row.price),
+});
+
+const attachOrderItems = async (orders) => {
+  if (!orders.length) return orders;
+  const orderIds = orders.map((order) => order.id);
+  const [rows] = await pool.query('SELECT * FROM order_items WHERE order_id IN (?)', [orderIds]);
+  const itemsMap = {};
+  rows.forEach((row) => {
+    const item = mapOrderItem(row);
+    if (!itemsMap[item.orderId]) {
+      itemsMap[item.orderId] = [];
+    }
+    itemsMap[item.orderId].push({
+      bookId: item.bookId,
+      bookTitle: item.bookTitle,
+      quantity: item.quantity,
+      price: item.price,
+    });
+  });
+
+  return orders.map((order) => ({
+    ...order,
+    items: itemsMap[order.id] || [],
+  }));
+};
 
 const getAllOrders = async () => {
   const [rows] = await pool.query('SELECT * FROM orders ORDER BY created_at DESC');
-  return rows.map(mapOrder);
+  const orders = rows.map(mapOrder);
+  return attachOrderItems(orders);
 };
 
 const getOrdersBySchool = async (schoolId) => {
   const [rows] = await pool.query('SELECT * FROM orders WHERE school_id = ? ORDER BY created_at DESC', [
     schoolId,
   ]);
-  return rows.map(mapOrder);
+  const orders = rows.map(mapOrder);
+  return attachOrderItems(orders);
 };
 
 const getOrdersByPublisher = async (publisherId) => {
   const [rows] = await pool.query(
-    `SELECT DISTINCT o.* 
+    `SELECT DISTINCT o.*
      FROM orders o
      JOIN order_items oi ON o.id = oi.order_id
      JOIN books b ON oi.book_id = b.id
@@ -33,7 +68,8 @@ const getOrdersByPublisher = async (publisherId) => {
      ORDER BY o.created_at DESC`,
     [publisherId]
   );
-  return rows.map(mapOrder);
+  const orders = rows.map(mapOrder);
+  return attachOrderItems(orders);
 };
 
 const createOrder = async ({ schoolId, schoolName, total, status, paymentStatus, items }) => {
@@ -61,7 +97,7 @@ const createOrder = async ({ schoolId, schoolName, total, status, paymentStatus,
     }
 
     await connection.commit();
-    return mapOrder({
+    const newOrder = mapOrder({
       id: orderId,
       school_id: schoolId,
       school_name: schoolName,
@@ -71,6 +107,8 @@ const createOrder = async ({ schoolId, schoolName, total, status, paymentStatus,
       created_at: new Date(),
       updated_at: new Date(),
     });
+    newOrder.items = items || [];
+    return newOrder;
   } catch (error) {
     await connection.rollback();
     throw error;
@@ -86,7 +124,17 @@ const updateOrderStatus = async (id, status, paymentStatus) => {
     id,
   ]);
   const [rows] = await pool.query('SELECT * FROM orders WHERE id = ?', [id]);
-  return rows[0] ? mapOrder(rows[0]) : null;
+  if (!rows[0]) return null;
+  const [itemsRows] = await pool.query('SELECT * FROM order_items WHERE order_id = ?', [id]);
+  return {
+    ...mapOrder(rows[0]),
+    items: itemsRows.map((row) => ({
+      bookId: String(row.book_id),
+      bookTitle: row.book_title,
+      quantity: row.quantity,
+      price: Number(row.price),
+    })),
+  };
 };
 
 module.exports = {

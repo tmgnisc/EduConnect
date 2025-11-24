@@ -25,15 +25,15 @@ import AdminOrders from "./pages/admin/AdminOrders";
 import PublisherDashboard from "./pages/publisher/PublisherDashboard";
 import PublisherBooks from "./pages/publisher/PublisherBooks";
 import PublisherOrders from "./pages/publisher/PublisherOrders";
-import PublisherSchools from "./pages/publisher/PublisherSchools";
-import PublisherFeedback from "./pages/publisher/PublisherFeedback";
+import PublisherSchools from "./pages/publisher/PublisherSchools.tsx";
+import PublisherFeedback from "./pages/publisher/PublisherFeedback.tsx";
 
 // School Pages
 import SchoolDashboard from "./pages/school/SchoolDashboard";
 import SchoolCart from "./pages/school/SchoolCart";
 import SchoolOrders from "./pages/school/SchoolOrders";
 import SchoolProgress from "./pages/school/SchoolProgress";
-import SchoolFeedback from "./pages/school/SchoolFeedback";
+import SchoolFeedback from "./pages/school/SchoolFeedback.tsx";
 
 // Settings
 import Settings from "./pages/Settings";

@@ -19,7 +19,8 @@ export default function SchoolFeedback() {
     try {
       setLoading(true);
       const [publisherRes, feedbackRes] = await Promise.all([usersApi.getPublishers(), feedbackApi.getAll()]);
-      setPublishers(publisherRes.data || []);
+      const approvedPublishers = (publisherRes.data || []).filter((publisher) => publisher.status === 'approved');
+      setPublishers(approvedPublishers);
       setFeedback(feedbackRes.data || []);
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to load feedback');

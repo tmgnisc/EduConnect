@@ -1,15 +1,14 @@
 import { NavLink } from '@/components/NavLink';
 import { useAuthStore } from '@/store/authStore';
-import { 
-  LayoutDashboard, 
-  BookOpen, 
-  ShoppingCart, 
-  Users, 
-  FileText, 
-  BarChart3,
-  Upload,
+import {
+  LayoutDashboard,
+  BookOpen,
+  ShoppingCart,
+  Users,
+  FileText,
   CheckSquare,
-  Settings
+  MessageSquare,
+  Settings,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -25,6 +24,7 @@ const publisherLinks = [
   { to: '/publisher/books', label: 'My Books', icon: BookOpen },
   { to: '/publisher/orders', label: 'Orders', icon: ShoppingCart },
   { to: '/publisher/schools', label: 'Schools', icon: Users },
+  { to: '/publisher/feedback', label: 'Feedback', icon: MessageSquare },
 ];
 
 const schoolLinks = [
@@ -32,7 +32,7 @@ const schoolLinks = [
   { to: '/school/cart', label: 'Cart', icon: ShoppingCart },
   { to: '/school/orders', label: 'My Orders', icon: FileText },
   { to: '/school/progress', label: 'Progress', icon: CheckSquare },
-  { to: '/school/activities', label: 'Activities', icon: Upload },
+  { to: '/school/feedback', label: 'Feedback', icon: MessageSquare },
 ];
 
 export const Sidebar = () => {
