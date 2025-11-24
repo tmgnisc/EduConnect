@@ -34,7 +34,7 @@ The API is served from `http://localhost:5000`. The frontend already points to t
 - **Document verification:** Publisher and school registrations upload a verification image that is stored on Cloudinary and reviewable by the super admin.
 - **Role-based access:** Middleware guards ensure only authorized roles can hit sensitive endpoints.
 - **Database:** MySQL connection pool with sample schema (`server/database/schema.sql`) covering users, books, orders, and order items.
-- **Books & Orders:** CRUD helpers for books (with optional Cloudinary uploads) and transactional order creation with line items.
+- **Books & Orders:** CRUD helpers for books (with Cloudinary cover uploads, author/grade/subject metadata) and transactional order creation with line items.
 - **Payments & Media:** Stripe payment intent endpoint and Cloudinary upload helper, ready for future UI hooks.
 - **Notifications:** Nodemailer integration for welcome emails. Verified automatically on server boot.
 - **Health & monitoring:** `/health` endpoint, Helmet, CORS, and morgan logging.

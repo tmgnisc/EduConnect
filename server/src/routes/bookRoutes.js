@@ -11,7 +11,7 @@ router.get('/', authMiddleware, listBooks);
 router.get('/:id', authMiddleware, fetchBook);
 router.post('/', authMiddleware, roleMiddleware('publisher', 'admin'), upload.single('cover'), addBook);
 router.put('/:id', authMiddleware, roleMiddleware('publisher', 'admin'), upload.single('cover'), editBook);
-router.delete('/:id', authMiddleware, roleMiddleware('admin'), removeBook);
+router.delete('/:id', authMiddleware, roleMiddleware('publisher', 'admin'), removeBook);
 
 module.exports = router;
 

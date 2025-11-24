@@ -33,9 +33,11 @@ export const schoolRegisterSchema = z.object({
 
 export const bookSchema = z.object({
   title: z.string().min(2, 'Title is required'),
+  author: z.string().min(2, 'Author is required'),
   grade: z.string().min(1, 'Grade is required'),
   subject: z.string().min(2, 'Subject is required'),
   isbn: z.string().min(10, 'Valid ISBN is required'),
-  price: z.number().positive('Price must be positive'),
+  price: z
+    .preprocess((value) => (typeof value === 'string' ? parseFloat(value) : value), z.number().positive('Price must be positive')),
   description: z.string().optional(),
 });

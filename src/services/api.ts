@@ -70,12 +70,18 @@ export const booksApi = {
   },
 
   create: async (data: any) => {
-    const response = await apiClient.post('/books', data);
+    const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
+    const response = await apiClient.post('/books', data, {
+      headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : undefined,
+    });
     return response.data;
   },
 
   update: async (id: string, data: any) => {
-    const response = await apiClient.put(`/books/${id}`, data);
+    const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
+    const response = await apiClient.put(`/books/${id}`, data, {
+      headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : undefined,
+    });
     return response.data;
   },
 

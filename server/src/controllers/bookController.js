@@ -24,10 +24,15 @@ const fetchBook = async (req, res, next) => {
 
 const addBook = async (req, res, next) => {
   try {
-    const { title, grade, subject, isbn, price, description } = req.body;
+    const { title, grade, subject, author, isbn, price, description } = req.body;
 
-    if (!title || !grade || !subject || !isbn || !price) {
+    if (!title || !grade || !subject || !author || !isbn || !price) {
       return res.status(400).json({ message: 'Missing required fields' });
+    }
+
+    const parsedPrice = Number(price);
+    if (Number.isNaN(parsedPrice)) {
+      return res.status(400).json({ message: 'Price must be a valid number' });
     }
 
     let coverImage;
@@ -40,8 +45,9 @@ const addBook = async (req, res, next) => {
       title,
       grade,
       subject,
+      author,
       isbn,
-      price,
+      price: parsedPrice,
       description,
       coverImage,
       publisherId: req.user.id,
@@ -54,9 +60,34 @@ const addBook = async (req, res, next) => {
   }
 };
 
+const ensureCanModify = (book, user) => {
+  if (!book) {
+    const error = new Error('Book not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (user.role !== 'admin' && String(book.publisherId) !== String(user.id)) {
+    const error = new Error('You are not allowed to modify this book');
+    error.statusCode = 403;
+    throw error;
+  }
+};
+
 const editBook = async (req, res, next) => {
   try {
+    const book = await getBookById(req.params.id);
+    ensureCanModify(book, req.user);
+
     const updates = { ...req.body };
+    if (updates.price !== undefined) {
+      const parsedPrice = Number(updates.price);
+      if (Number.isNaN(parsedPrice)) {
+        return res.status(400).json({ message: 'Price must be a valid number' });
+      }
+      updates.price = parsedPrice;
+    }
+
     if (req.file) {
       const uploaded = await uploadImage(req.file.buffer);
       updates.coverImage = uploaded.secure_url;
@@ -71,6 +102,8 @@ const editBook = async (req, res, next) => {
 
 const removeBook = async (req, res, next) => {
   try {
+    const book = await getBookById(req.params.id);
+    ensureCanModify(book, req.user);
     await deleteBook(req.params.id);
     res.status(204).send();
   } catch (error) {
