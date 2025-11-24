@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { findAuthByEmail, createUser, findUserById } = require('../services/userService');
 const { sendRegistrationEmail } = require('../services/emailService');
+const { uploadImage } = require('../services/cloudinaryService');
 
 const generateToken = (user) =>
   jwt.sign(
@@ -23,6 +24,11 @@ const register = async (req, res, next) => {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
+    const requiresDocument = ['publisher', 'school'].includes(role);
+    if (requiresDocument && !req.file) {
+      return res.status(400).json({ message: 'Verification document is required' });
+    }
+
     const existingUser = await findAuthByEmail(email);
     if (existingUser) {
       return res.status(409).json({ message: 'Email already registered' });
@@ -30,6 +36,12 @@ const register = async (req, res, next) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const status = role === 'school' ? 'approved' : 'pending';
+    let documentUrl = null;
+
+    if (req.file) {
+      const uploaded = await uploadImage(req.file.buffer, `verifications/${role}`);
+      documentUrl = uploaded.secure_url;
+    }
 
     const user = await createUser({
       name,
@@ -39,6 +51,7 @@ const register = async (req, res, next) => {
       phone,
       password: hashedPassword,
       status,
+      documentUrl,
     });
 
     sendRegistrationEmail({ to: email, name, role });

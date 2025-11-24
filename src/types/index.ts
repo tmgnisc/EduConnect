@@ -6,6 +6,7 @@ export interface User {
   name: string;
   role: UserRole;
   status: 'pending' | 'approved' | 'rejected';
+  documentUrl?: string;
   createdAt: string;
 }
 
@@ -14,7 +15,7 @@ export interface AuthState {
   token: string | null;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (data: RegisterData) => Promise<void>;
+  register: (data: RegisterData | FormData) => Promise<void>;
   logout: () => void;
   setUser: (user: User) => void;
 }
@@ -27,6 +28,7 @@ export interface RegisterData {
   organizationName?: string;
   phone?: string;
   address?: string;
+  verificationDocument?: File;
 }
 
 export interface Book {

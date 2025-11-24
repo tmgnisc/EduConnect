@@ -44,8 +44,11 @@ export const authApi = {
     return response.data;
   },
 
-  register: async (data: RegisterData) => {
-    const response = await apiClient.post('/auth/register', data);
+  register: async (data: RegisterData | FormData) => {
+    const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
+    const response = await apiClient.post('/auth/register', data, {
+      headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : undefined,
+    });
     return response.data;
   },
 

@@ -48,6 +48,7 @@ All backend secrets live in `server/.env` (see `server/.env.example` for the exa
 - Server: `PORT`, `NODE_ENV`, `FRONTEND_URL`
 - Security: `JWT_SECRET`
 - Integrations: Gmail credentials, Cloudinary, Stripe keys
+- Super admin overrides (optional): `SUPER_ADMIN_EMAIL`, `SUPER_ADMIN_PASSWORD`, `SUPER_ADMIN_NAME`
 
 ---
 
@@ -67,6 +68,12 @@ All backend secrets live in `server/.env` (see `server/.env.example` for the exa
    # Alternatively: run the SQL manually
    mysql -u root -p EduConnect < server/database/schema.sql
    ```
+4. Seed the built-in super admin (optional but recommended):
+   ```bash
+   npm run db:seed:superadmin
+   ```
+   - Default credentials: `superadmin@educonnect.com / SuperAdmin@123`
+   - Override via env: `SUPER_ADMIN_EMAIL`, `SUPER_ADMIN_PASSWORD`, `SUPER_ADMIN_NAME`
 
 Seed at least one admin/publisher/school user (or use the frontend dummy logins for UI smoke tests).
 

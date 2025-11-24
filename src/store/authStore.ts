@@ -72,7 +72,7 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      register: async (data: RegisterData) => {
+      register: async (data: RegisterData | FormData) => {
         try {
           await authApi.register(data);
         } catch (error) {

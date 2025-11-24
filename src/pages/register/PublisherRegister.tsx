@@ -11,12 +11,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { toast } from 'sonner';
 import { BookOpen } from 'lucide-react';
 import { z } from 'zod';
+import { useState } from 'react';
 
 type RegisterForm = z.infer<typeof publisherRegisterSchema>;
 
 export default function PublisherRegister() {
   const navigate = useNavigate();
   const register = useAuthStore((state) => state.register);
+  const [verificationFile, setVerificationFile] = useState<File | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
 
   const {
     register: registerField,
@@ -29,15 +32,22 @@ export default function PublisherRegister() {
   const onSubmit = async (data: RegisterForm) => {
     try {
       const { confirmPassword, ...rest } = data;
-      await register({
-        email: rest.email,
-        password: rest.password,
-        name: rest.name,
-        role: 'publisher',
-        organizationName: rest.organizationName,
-        phone: rest.phone,
-        address: rest.address,
-      });
+      if (!verificationFile) {
+        setFileError('Verification document is required');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('name', rest.name);
+      formData.append('email', rest.email);
+      formData.append('password', rest.password);
+      formData.append('role', 'publisher');
+      formData.append('organizationName', rest.organizationName);
+      formData.append('phone', rest.phone);
+      formData.append('address', rest.address);
+      formData.append('verificationDocument', verificationFile);
+
+      await register(formData);
       toast.success('Registration successful! Awaiting admin approval.');
       navigate('/login');
     } catch (error: any) {
@@ -82,6 +92,24 @@ export default function PublisherRegister() {
                   <p className="text-sm text-destructive">{errors.email.message}</p>
                 )}
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="verificationDocument">Verification Document (Image)</Label>
+              <Input
+                id="verificationDocument"
+                type="file"
+                accept="image/*"
+                onChange={(event) => {
+                  const file = event.target.files?.[0] || null;
+                  setVerificationFile(file);
+                  setFileError(null);
+                }}
+              />
+              <p className="text-xs text-muted-foreground">
+                Upload a government registration or license (JPG/PNG, max 5MB).
+              </p>
+              {fileError && <p className="text-sm text-destructive">{fileError}</p>}
             </div>
 
             <div className="space-y-2">

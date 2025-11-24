@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
   role ENUM('admin', 'publisher', 'school') NOT NULL,
   organization_name VARCHAR(255),
   phone VARCHAR(50),
+  document_url VARCHAR(500),
   status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -47,4 +48,6 @@ CREATE TABLE IF NOT EXISTS order_items (
   FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
   FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE
 );
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS document_url VARCHAR(500);
 

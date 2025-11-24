@@ -6,6 +6,7 @@ const mapUser = (row) => ({
   email: row.email,
   role: row.role,
   status: row.status,
+  documentUrl: row.document_url,
   createdAt: row.created_at,
 });
 
@@ -16,24 +17,42 @@ const findAuthByEmail = async (email) => {
 
 const findUserById = async (id) => {
   const [rows] = await pool.query(
-    'SELECT id, name, email, role, status, created_at FROM users WHERE id = ?',
+    'SELECT id, name, email, role, status, document_url, created_at FROM users WHERE id = ?',
     [id]
   );
   return rows[0] ? mapUser(rows[0]) : null;
 };
 
-const createUser = async ({ name, email, password, role, organizationName, phone, status }) => {
+const createUser = async ({
+  name,
+  email,
+  password,
+  role,
+  organizationName,
+  phone,
+  status,
+  documentUrl,
+}) => {
   const [result] = await pool.query(
-    `INSERT INTO users (name, email, password, role, organization_name, phone, status)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [name, email, password, role, organizationName || null, phone || null, status || 'pending']
+    `INSERT INTO users (name, email, password, role, organization_name, phone, status, document_url)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      name,
+      email,
+      password,
+      role,
+      organizationName || null,
+      phone || null,
+      status || 'pending',
+      documentUrl || null,
+    ]
   );
   return findUserById(result.insertId);
 };
 
 const getAllUsers = async () => {
   const [rows] = await pool.query(
-    'SELECT id, name, email, role, status, created_at FROM users ORDER BY created_at DESC'
+    'SELECT id, name, email, role, status, document_url, created_at FROM users ORDER BY created_at DESC'
   );
   return rows.map(mapUser);
 };
