@@ -1,65 +1,93 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingCart, Trash2, Plus, Minus, ArrowRight } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ShoppingCart, Trash2, Plus, Minus, ArrowRight, Loader2, CreditCard } from 'lucide-react';
+import { useCartStore } from '@/store/cartStore';
+import { paymentsApi, ordersApi } from '@/services/api';
+import { toast } from 'sonner';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, CardElement, useElements, useStripe } from '@stripe/react-stripe-js';
+import { useAuthStore } from '@/store/authStore';
+import { CartItem } from '@/types';
+
+const publishableKey =
+  import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || import.meta.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '';
+const stripePromise = publishableKey ? loadStripe(publishableKey) : null;
 
 export default function SchoolCart() {
-  const cartItems = [
-    {
-      id: '1',
-      title: 'Mathematics Grade 8',
-      grade: 'Grade 8',
-      subject: 'Mathematics',
-      price: 500,
-      quantity: 2,
-    },
-    {
-      id: '2',
-      title: 'Science Grade 9',
-      grade: 'Grade 9',
-      subject: 'Science',
-      price: 550,
-      quantity: 1,
-    },
-    {
-      id: '3',
-      title: 'English Grade 7',
-      grade: 'Grade 7',
-      subject: 'English',
-      price: 480,
-      quantity: 3,
-    },
-  ];
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const cartItems = useCartStore((state) => state.items);
+  const updateQuantity = useCartStore((state) => state.updateQuantity);
+  const removeItem = useCartStore((state) => state.removeItem);
+  const clearCart = useCartStore((state) => state.clearCart);
 
-  const subtotal = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
-  const tax = subtotal * 0.13; // 13% tax
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [isPreparingPayment, setIsPreparingPayment] = useState(false);
+
+  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const tax = subtotal * 0.13;
   const total = subtotal + tax;
+
+  const handleCheckout = async () => {
+    if (!cartItems.length) {
+      toast.error('Your cart is empty.');
+      return;
+    }
+    if (!stripePromise) {
+      toast.error('Stripe publishable key is missing. Please set it in your env file.');
+      return;
+    }
+
+    try {
+      setIsPreparingPayment(true);
+      const response = await paymentsApi.createIntent(total);
+      setClientSecret(response.clientSecret);
+      setPaymentDialogOpen(true);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Unable to start payment. Please try again.');
+    } finally {
+      setIsPreparingPayment(false);
+    }
+  };
+
+  const handleContinueShopping = () => {
+    navigate('/school');
+  };
+
+  const handleOrderSuccess = () => {
+    clearCart();
+    setPaymentDialogOpen(false);
+    setClientSecret(null);
+    toast.success('Payment successful! Order placed.');
+    navigate('/school/orders');
+  };
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Shopping Cart</h1>
-        <p className="text-muted-foreground mt-2">
-          Review your selected books
-        </p>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Shopping Cart</h1>
+          <p className="text-muted-foreground mt-2">Review your selected books before checkout.</p>
+        </div>
+        <Button variant="outline" onClick={handleContinueShopping}>
+          Browse Publishers
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-4">
           {cartItems.length === 0 ? (
             <Card className="shadow-soft">
-              <CardContent className="flex flex-col items-center justify-center py-12">
+              <CardContent className="flex flex-col items-center justify-center py-12 text-center">
                 <ShoppingCart className="w-16 h-16 text-muted-foreground mb-4" />
-                <p className="text-lg font-medium text-foreground mb-2">
-                  Your cart is empty
-                </p>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Start adding books to your cart
-                </p>
-                <Button>Browse Books</Button>
+                <p className="text-lg font-medium text-foreground mb-2">Your cart is empty</p>
+                <p className="text-sm text-muted-foreground mb-4">Browse publishers and add books to your cart.</p>
+                <Button onClick={handleContinueShopping}>Browse Publishers</Button>
               </CardContent>
             </Card>
           ) : (
@@ -75,15 +103,13 @@ export default function SchoolCart() {
                         <p className="font-medium text-foreground text-lg">{item.title}</p>
                         <div className="flex items-center gap-2 mt-1">
                           <Badge variant="outline" className="text-xs">
-                            {item.grade}
+                            Grade {item.grade}
                           </Badge>
                           <Badge variant="outline" className="text-xs">
                             {item.subject}
                           </Badge>
                         </div>
-                        <p className="text-lg font-bold text-foreground mt-2">
-                          NPR {item.price}
-                        </p>
+                        <p className="text-lg font-bold text-foreground mt-2">NPR {item.price.toFixed(2)}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
@@ -92,21 +118,29 @@ export default function SchoolCart() {
                           variant="ghost"
                           size="sm"
                           className="h-8 w-8 p-0"
+                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                          aria-label="Decrease quantity"
                         >
                           <Minus className="w-4 h-4" />
                         </Button>
-                        <span className="px-3 py-1 text-sm font-medium">
-                          {item.quantity}
-                        </span>
+                        <span className="px-3 py-1 text-sm font-medium">{item.quantity}</span>
                         <Button
                           variant="ghost"
                           size="sm"
                           className="h-8 w-8 p-0"
+                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                          aria-label="Increase quantity"
                         >
                           <Plus className="w-4 h-4" />
                         </Button>
                       </div>
-                      <Button variant="ghost" size="sm" className="text-destructive">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive"
+                        onClick={() => removeItem(item.id)}
+                        aria-label="Remove from cart"
+                      >
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
@@ -126,7 +160,7 @@ export default function SchoolCart() {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span className="font-medium">NPR {subtotal}</span>
+                  <span className="font-medium">NPR {subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Tax (13%)</span>
@@ -137,18 +171,135 @@ export default function SchoolCart() {
                   <span className="font-bold text-foreground">NPR {total.toFixed(2)}</span>
                 </div>
               </div>
-              <Button className="w-full" size="lg">
-                Proceed to Checkout
-                <ArrowRight className="w-4 h-4 ml-2" />
+              <Button className="w-full" size="lg" onClick={handleCheckout} disabled={!cartItems.length || isPreparingPayment}>
+                {isPreparingPayment ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Preparing Checkout...
+                  </>
+                ) : (
+                  <>
+                    Proceed to Checkout
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </>
+                )}
               </Button>
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full" onClick={handleContinueShopping}>
                 Continue Shopping
               </Button>
             </CardContent>
           </Card>
         </div>
       </div>
+
+      <Dialog
+        open={paymentDialogOpen}
+        onOpenChange={(open) => {
+          setPaymentDialogOpen(open);
+          if (!open) {
+            setClientSecret(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Complete Payment</DialogTitle>
+            <DialogDescription>Enter your card details to confirm the order.</DialogDescription>
+          </DialogHeader>
+          {!stripePromise || !clientSecret ? (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Initializing payment...
+            </div>
+          ) : (
+            <Elements stripe={stripePromise} options={{ clientSecret }}>
+              <CheckoutForm
+                clientSecret={clientSecret}
+                total={total}
+                cartItems={cartItems}
+                user={user}
+                onSuccess={handleOrderSuccess}
+              />
+            </Elements>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
+interface CheckoutFormProps {
+  clientSecret: string;
+  total: number;
+  cartItems: CartItem[];
+  user: ReturnType<typeof useAuthStore>['user'];
+  onSuccess: () => void;
+}
+
+const CheckoutForm = ({ clientSecret, total, cartItems, user, onSuccess }: CheckoutFormProps) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!stripe || !elements) return;
+
+    try {
+      setIsProcessing(true);
+      const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: elements.getElement(CardElement)!,
+          billing_details: {
+            name: user?.name ?? 'School',
+            email: user?.email,
+          },
+        },
+      });
+
+      if (error || paymentIntent?.status !== 'succeeded') {
+        toast.error(error?.message || 'Payment failed. Please try again.');
+        return;
+      }
+
+      await ordersApi.create({
+        items: cartItems.map((item) => ({
+          bookId: item.id,
+          bookTitle: item.title,
+          quantity: item.quantity,
+          price: item.price,
+        })),
+        total,
+        paymentStatus: 'completed',
+      });
+
+      onSuccess();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || err?.message || 'Unable to place order.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  return (
+    <form className="space-y-4" onSubmit={handleSubmit}>
+      <div className="space-y-2">
+        <CardElement options={{ hidePostalCode: true }} />
+      </div>
+      <Button type="submit" className="w-full flex items-center justify-center gap-2" disabled={isProcessing}>
+        {isProcessing ? (
+          <>
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Processing...
+          </>
+        ) : (
+          <>
+            Pay NPR {total.toFixed(2)}
+            <CreditCard className="w-4 h-4" />
+          </>
+        )}
+      </Button>
+    </form>
+  );
+};
 
