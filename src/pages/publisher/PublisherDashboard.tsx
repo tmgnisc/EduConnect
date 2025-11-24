@@ -38,6 +38,7 @@ const defaultValues: BookFormValues = {
 
 export default function PublisherDashboard() {
   const currentUser = useAuthStore((state) => state.user);
+  const currentUserId = currentUser?.id ? String(currentUser.id) : undefined;
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -71,8 +72,8 @@ export default function PublisherDashboard() {
   }, []);
 
   const myBooks = useMemo(
-    () => books.filter((book) => book.publisherId === currentUser?.id),
-    [books, currentUser?.id]
+    () => (currentUserId ? books.filter((book) => book.publisherId === currentUserId) : []),
+    [books, currentUserId]
   );
 
   const stats = useMemo(
