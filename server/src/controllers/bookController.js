@@ -93,8 +93,8 @@ const editBook = async (req, res, next) => {
       updates.coverImage = uploaded.secure_url;
     }
 
-    const book = await updateBook(req.params.id, updates);
-    res.json({ data: book });
+    const updatedBook = await updateBook(req.params.id, updates);
+    res.json({ data: updatedBook });
   } catch (error) {
     next(error);
   }
