@@ -45,6 +45,24 @@ const createBook = async ({
   return getBookById(result.insertId);
 };
 
+const updateBook = async (id, payload) => {
+  const fields = [];
+  const values = [];
+
+  Object.entries(payload).forEach(([key, value]) => {
+    if (value !== undefined) {
+      fields.push(`${key} = ?`);
+      values.push(value);
+    }
+  });
+
+  if (!fields.length) return getBookById(id);
+
+  values.push(id);
+  await pool.query(`UPDATE books SET ${fields.join(', ')} WHERE id = ?`, values);
+  return getBookById(id);
+};
+
 const deleteBook = async (id) => {
   await pool.query('DELETE FROM books WHERE id = ?', [id]);
 };
@@ -53,6 +71,7 @@ module.exports = {
   getAllBooks,
   getBookById,
   createBook,
+  updateBook,
   deleteBook,
 };
 

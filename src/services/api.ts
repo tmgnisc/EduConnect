@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { RegisterData } from '@/types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -84,34 +84,29 @@ export const booksApi = {
 
 export const ordersApi = {
   getAll: async () => {
-    const response = await apiClient.get('/orders');
+    const response = await apiClient.get("/orders");
     return response.data;
   },
 
   create: async (data: any) => {
-    const response = await apiClient.post('/orders', data);
+    const response = await apiClient.post("/orders", data);
     return response.data;
   },
 
-  updateStatus: async (id: string, status: string) => {
-    const response = await apiClient.patch(`/orders/${id}/status`, { status });
+  updateStatus: async (id: string, status: string, paymentStatus?: string) => {
+    const response = await apiClient.patch(`/orders/${id}`, { status, paymentStatus });
     return response.data;
   },
 };
 
 export const usersApi = {
   getAll: async () => {
-    const response = await apiClient.get('/users');
+    const response = await apiClient.get("/users");
     return response.data;
   },
 
-  approve: async (id: string) => {
-    const response = await apiClient.patch(`/users/${id}/approve`);
-    return response.data;
-  },
-
-  reject: async (id: string) => {
-    const response = await apiClient.patch(`/users/${id}/reject`);
+  updateStatus: async (id: string, status: string) => {
+    const response = await apiClient.patch(`/users/${id}/status`, { status });
     return response.data;
   },
 };
