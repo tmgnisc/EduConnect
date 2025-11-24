@@ -125,6 +125,13 @@ export const usersApi = {
   },
 };
 
+export const paymentsApi = {
+  createIntent: async (amount: number) => {
+    const response = await apiClient.post('/payments/intent', { amount });
+    return response.data;
+  },
+};
+
 export const activitiesApi = {
   create: async (data: FormData) => {
     const response = await apiClient.post('/activities', data, {
