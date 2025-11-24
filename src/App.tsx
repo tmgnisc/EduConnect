@@ -27,7 +27,7 @@ import PublisherDashboard from "./pages/publisher/PublisherDashboard";
 import PublisherBooks from "./pages/publisher/PublisherBooks";
 import PublisherOrders from "./pages/publisher/PublisherOrders";
 import PublisherAnalytics from "./pages/publisher/PublisherAnalytics";
-import PublisherSchools from "./pages/publisher/PublisherSchools";
+import PublisherSchools from "./pages/publisher/PublisherSchools.tsx";
 
 // School Pages
 import SchoolDashboard from "./pages/school/SchoolDashboard";
