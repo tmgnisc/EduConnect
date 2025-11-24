@@ -19,6 +19,7 @@ export default function PublisherOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
   const fetchOrders = async () => {
     try {
@@ -35,6 +36,19 @@ export default function PublisherOrders() {
   useEffect(() => {
     fetchOrders();
   }, []);
+
+  const handleStatusUpdate = async (orderId: string, status: Order['status']) => {
+    try {
+      setActionLoadingId(orderId);
+      await ordersApi.updateStatus(orderId, status, status === 'delivered' ? 'completed' : undefined);
+      toast.success(`Order ${status}`);
+      fetchOrders();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Unable to update order status');
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
 
   const filteredOrders = useMemo(() => {
     const term = searchTerm.toLowerCase();
@@ -105,12 +119,37 @@ export default function PublisherOrders() {
                         </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-lg font-bold text-foreground">NPR {order.total.toFixed(2)}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Placed on {new Date(order.createdAt).toLocaleDateString()}
-                      </p>
+                  <div className="text-right">
+                    <p className="text-lg font-bold text-foreground">NPR {Number(order.total ?? 0).toFixed(2)}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Placed on {new Date(order.createdAt).toLocaleDateString()}
+                    </p>
+                    <div className="flex flex-wrap gap-2 justify-end mt-3">
+                      {order.status === 'pending' && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleStatusUpdate(order.id, 'confirmed')}
+                          disabled={actionLoadingId === order.id}
+                        >
+                          {actionLoadingId === order.id ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm Order'}
+                        </Button>
+                      )}
+                      {order.status === 'confirmed' && (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => handleStatusUpdate(order.id, 'delivered')}
+                          disabled={actionLoadingId === order.id}
+                        >
+                          {actionLoadingId === order.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            'Mark Delivered'
+                          )}
+                        </Button>
+                      )}
                     </div>
+                  </div>
                   </div>
                 );
               })}
