@@ -25,15 +25,15 @@ import AdminOrders from "./pages/admin/AdminOrders";
 import PublisherDashboard from "./pages/publisher/PublisherDashboard";
 import PublisherBooks from "./pages/publisher/PublisherBooks";
 import PublisherOrders from "./pages/publisher/PublisherOrders";
-import PublisherSchools from "./pages/publisher/PublisherSchools.tsx";
+import PublisherSchools from "./pages/publisher/PublisherSchools";
+import PublisherFeedback from "./pages/publisher/PublisherFeedback";
 
 // School Pages
 import SchoolDashboard from "./pages/school/SchoolDashboard";
-import SchoolBooks from "./pages/school/SchoolBooks";
 import SchoolCart from "./pages/school/SchoolCart";
 import SchoolOrders from "./pages/school/SchoolOrders";
 import SchoolProgress from "./pages/school/SchoolProgress";
-import SchoolActivities from "./pages/school/SchoolActivities";
+import SchoolFeedback from "./pages/school/SchoolFeedback";
 
 // Settings
 import Settings from "./pages/Settings";
@@ -84,6 +84,7 @@ const App = () => {
               <Route path="books" element={<PublisherBooks />} />
               <Route path="orders" element={<PublisherOrders />} />
               <Route path="schools" element={<PublisherSchools />} />
+              <Route path="feedback" element={<PublisherFeedback />} />
             </Route>
 
             {/* School Routes */}
@@ -96,11 +97,10 @@ const App = () => {
               }
             >
               <Route index element={<SchoolDashboard />} />
-              <Route path="books" element={<SchoolBooks />} />
               <Route path="cart" element={<SchoolCart />} />
               <Route path="orders" element={<SchoolOrders />} />
               <Route path="progress" element={<SchoolProgress />} />
-              <Route path="activities" element={<SchoolActivities />} />
+              <Route path="feedback" element={<SchoolFeedback />} />
             </Route>
 
             {/* Settings Route (accessible by all authenticated users) */}

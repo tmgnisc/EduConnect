@@ -132,6 +132,36 @@ export const paymentsApi = {
   },
 };
 
+export const progressApi = {
+  getAll: async () => {
+    const response = await apiClient.get('/progress');
+    return response.data;
+  },
+  create: async (data: { bookId: string; bookTitle: string; status: string; description?: string }) => {
+    const response = await apiClient.post('/progress', data);
+    return response.data;
+  },
+  update: async (id: string, data: { status?: string; description?: string }) => {
+    const response = await apiClient.put(`/progress/${id}`, data);
+    return response.data;
+  },
+  remove: async (id: string) => {
+    const response = await apiClient.delete(`/progress/${id}`);
+    return response.data;
+  },
+};
+
+export const feedbackApi = {
+  create: async (data: { publisherId: string; publisherName: string; message: string }) => {
+    const response = await apiClient.post('/feedback', data);
+    return response.data;
+  },
+  getAll: async () => {
+    const response = await apiClient.get('/feedback');
+    return response.data;
+  },
+};
+
 export const activitiesApi = {
   create: async (data: FormData) => {
     const response = await apiClient.post('/activities', data, {

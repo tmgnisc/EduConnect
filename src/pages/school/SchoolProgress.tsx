@@ -1,114 +1,163 @@
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CheckSquare, BookOpen, TrendingUp } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { progressApi, booksApi } from '@/services/api';
+import { ProgressEntry, Book } from '@/types';
+import { toast } from 'sonner';
+import { CheckSquare, BookOpen, TrendingUp, Loader2, PencilLine, Trash2, Plus } from 'lucide-react';
+
+const statusOptions: { value: ProgressEntry['status']; label: string }[] = [
+  { value: 'not-started', label: 'Not Started' },
+  { value: 'in-progress', label: 'In Progress' },
+  { value: 'completed', label: 'Completed' },
+];
 
 export default function SchoolProgress() {
-  const progressItems = [
-    {
-      id: '1',
-      bookTitle: 'Mathematics Grade 8',
-      subject: 'Mathematics',
-      grade: 'Grade 8',
-      status: 'in-progress',
-      progress: 75,
-      lessonsCompleted: 15,
-      totalLessons: 20,
-    },
-    {
-      id: '2',
-      bookTitle: 'Science Grade 9',
-      subject: 'Science',
-      grade: 'Grade 9',
-      status: 'in-progress',
-      progress: 60,
-      lessonsCompleted: 12,
-      totalLessons: 20,
-    },
-    {
-      id: '3',
-      bookTitle: 'English Grade 7',
-      subject: 'English',
-      grade: 'Grade 7',
-      status: 'completed',
-      progress: 100,
-      lessonsCompleted: 18,
-      totalLessons: 18,
-    },
-  ];
+  const [entries, setEntries] = useState<ProgressEntry[]>([]);
+  const [books, setBooks] = useState<Book[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<ProgressEntry | null>(null);
+  const [selectedBookId, setSelectedBookId] = useState<string>('');
+  const [form, setForm] = useState<{ status: ProgressEntry['status']; description: string }>({
+    status: 'in-progress',
+    description: '',
+  });
 
-  const getStatusColor = (status: string) => {
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [progressRes, booksRes] = await Promise.all([progressApi.getAll(), booksApi.getAll()]);
+      setEntries(progressRes.data || []);
+      setBooks(booksRes.data || []);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to load progress');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const handleDialogClose = () => {
+    setDialogOpen(false);
+    setEditingEntry(null);
+    setSelectedBookId('');
+    setForm({ status: 'in-progress', description: '' });
+  };
+
+  const handleSave = async () => {
+    try {
+      if (!editingEntry && !selectedBookId) {
+        toast.error('Please select a book');
+        return;
+      }
+
+      if (editingEntry) {
+        await progressApi.update(editingEntry.id, {
+          status: form.status,
+          description: form.description,
+        });
+        toast.success('Progress updated');
+      } else {
+        const book = books.find((b) => b.id === selectedBookId);
+        if (!book) {
+          toast.error('Invalid book selected');
+          return;
+        }
+        await progressApi.create({
+          bookId: book.id,
+          bookTitle: book.title,
+          status: form.status,
+          description: form.description,
+        });
+        toast.success('Progress added');
+      }
+      handleDialogClose();
+      fetchData();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Unable to save progress');
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await progressApi.remove(id);
+      toast.success('Progress removed');
+      fetchData();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Unable to delete entry');
+    }
+  };
+
+  const overallProgress =
+    entries.length > 0 ? entries.reduce((sum, item) => sum + (item.status === 'completed' ? 100 : item.status === 'in-progress' ? 50 : 0), 0) / entries.length : 0;
+
+  const statusColor = (status: ProgressEntry['status']) => {
     switch (status) {
       case 'completed':
         return 'bg-primary-light text-primary';
       case 'in-progress':
         return 'bg-secondary-light text-secondary';
       case 'not-started':
-        return 'bg-muted text-muted-foreground';
       default:
-        return '';
+        return 'bg-muted text-muted-foreground';
     }
   };
 
-  const overallProgress =
-    progressItems.reduce((sum, item) => sum + item.progress, 0) /
-    progressItems.length;
-
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Learning Progress</h1>
-        <p className="text-muted-foreground mt-2">
-          Track your learning journey across all books
-        </p>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Learning Progress</h1>
+          <p className="text-muted-foreground mt-2">Track and update progress across books.</p>
+        </div>
+        <Button onClick={() => setDialogOpen(true)} className="flex items-center gap-2">
+          <Plus className="w-4 h-4" />
+          Add Progress
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="shadow-soft">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Overall Progress
-            </CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Overall Progress</CardTitle>
             <TrendingUp className="w-5 h-5 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{overallProgress.toFixed(0)}%</div>
-            <p className="text-sm text-muted-foreground mt-1">
-              Across all subjects
-            </p>
+            <p className="text-sm text-muted-foreground mt-1">Across all tracked books</p>
           </CardContent>
         </Card>
 
         <Card className="shadow-soft">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Books in Progress
-            </CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Books in Progress</CardTitle>
             <BookOpen className="w-5 h-5 text-secondary" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">
-              {progressItems.filter((item) => item.status === 'in-progress').length}
+              {entries.filter((entry) => entry.status === 'in-progress').length}
             </div>
-            <p className="text-sm text-muted-foreground mt-1">
-              Currently studying
-            </p>
+            <p className="text-sm text-muted-foreground mt-1">Currently studying</p>
           </CardContent>
         </Card>
 
         <Card className="shadow-soft">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Completed Books
-            </CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Completed Books</CardTitle>
             <CheckSquare className="w-5 h-5 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">
-              {progressItems.filter((item) => item.status === 'completed').length}
+              {entries.filter((entry) => entry.status === 'completed').length}
             </div>
-            <p className="text-sm text-muted-foreground mt-1">
-              Finished successfully
-            </p>
+            <p className="text-sm text-muted-foreground mt-1">Finished successfully</p>
           </CardContent>
         </Card>
       </div>
@@ -118,47 +167,112 @@ export default function SchoolProgress() {
           <CardTitle>Subject Progress</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-6">
-            {progressItems.map((item) => (
-              <div key={item.id} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
-                      <BookOpen className="w-5 h-5 text-white" />
-                    </div>
+          {loading ? (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Loading progress...
+            </div>
+          ) : entries.length === 0 ? (
+            <div className="text-center text-muted-foreground py-8">
+              No progress entries yet. Click “Add Progress” to get started.
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {entries.map((entry) => (
+                <div key={entry.id} className="space-y-2 border rounded-xl p-4">
+                  <div className="flex items-start justify-between gap-3 flex-wrap">
                     <div>
-                      <p className="font-medium text-foreground">{item.bookTitle}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="outline" className="text-xs">
-                          {item.grade}
-                        </Badge>
-                        <Badge variant="outline" className="text-xs">
-                          {item.subject}
-                        </Badge>
-                        <Badge className={`text-xs ${getStatusColor(item.status)}`}>
-                          {item.status}
-                        </Badge>
-                      </div>
+                      <p className="font-medium text-foreground">{entry.bookTitle}</p>
+                      <Badge className={`text-xs ${statusColor(entry.status)}`}>{entry.status}</Badge>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setEditingEntry(entry);
+                          setForm({ status: entry.status, description: entry.description || '' });
+                          setDialogOpen(true);
+                        }}
+                      >
+                        <PencilLine className="w-4 h-4 mr-2" />
+                        Edit
+                      </Button>
+                      <Button variant="destructive" size="sm" onClick={() => handleDelete(entry.id)}>
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete
+                      </Button>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-lg font-bold text-foreground">{item.progress}%</p>
-                    <p className="text-sm text-muted-foreground">
-                      {item.lessonsCompleted}/{item.totalLessons} lessons
-                    </p>
-                  </div>
+                  {entry.description && (
+                    <p className="text-sm text-muted-foreground">{entry.description}</p>
+                  )}
                 </div>
-                <div className="w-full bg-muted rounded-full h-2">
-                  <div
-                    className="bg-gradient-primary h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${item.progress}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      <Dialog open={dialogOpen} onOpenChange={(open) => (!open ? handleDialogClose() : setDialogOpen(true))}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingEntry ? 'Edit Progress' : 'Add Progress'}</DialogTitle>
+            <DialogDescription>
+              {editingEntry ? 'Update the progress details.' : 'Select a book and record your progress.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {!editingEntry && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Book</label>
+                <select
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={selectedBookId}
+                  onChange={(event) => setSelectedBookId(event.target.value)}
+                >
+                  <option value="">Select a book</option>
+                  {books.map((book) => (
+                    <option key={book.id} value={book.id}>
+                      {book.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Status</label>
+              <select
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={form.status}
+                onChange={(event) => setForm((prev) => ({ ...prev, status: event.target.value as ProgressEntry['status'] }))}
+              >
+                {statusOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Notes</label>
+              <Textarea
+                placeholder="Describe your progress..."
+                value={form.description}
+                onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))}
+              />
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button variant="outline" className="flex-1" onClick={handleDialogClose}>
+                Cancel
+              </Button>
+              <Button className="flex-1" onClick={handleSave}>
+                {editingEntry ? 'Update' : 'Save'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

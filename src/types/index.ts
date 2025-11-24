@@ -88,3 +88,23 @@ export interface Activity {
 export interface CartItem extends Book {
   quantity: number;
 }
+
+export interface ProgressEntry {
+  id: string;
+  bookId: string;
+  bookTitle: string;
+  status: 'not-started' | 'in-progress' | 'completed';
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FeedbackEntry {
+  id: string;
+  schoolId: string;
+  schoolName: string;
+  publisherId: string;
+  publisherName: string;
+  message: string;
+  createdAt: string;
+}

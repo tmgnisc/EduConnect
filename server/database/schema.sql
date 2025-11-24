@@ -53,3 +53,29 @@ CREATE TABLE IF NOT EXISTS order_items (
 ALTER TABLE users ADD COLUMN IF NOT EXISTS document_url VARCHAR(500);
 ALTER TABLE books ADD COLUMN IF NOT EXISTS author VARCHAR(255) AFTER subject;
 
+CREATE TABLE IF NOT EXISTS progress_entries (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  school_id INT NOT NULL,
+  school_name VARCHAR(255) NOT NULL,
+  book_id INT NOT NULL,
+  book_title VARCHAR(255) NOT NULL,
+  status ENUM('not-started', 'in-progress', 'completed') DEFAULT 'in-progress',
+  description TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (school_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS feedback (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  school_id INT NOT NULL,
+  school_name VARCHAR(255) NOT NULL,
+  publisher_id INT NOT NULL,
+  publisher_name VARCHAR(255) NOT NULL,
+  message TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (school_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (publisher_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
