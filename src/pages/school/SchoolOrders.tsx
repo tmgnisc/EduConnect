@@ -48,7 +48,7 @@ export default function SchoolOrders() {
     return orders.filter((order) => {
       const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
       const orderIdMatch = String(order.id).toLowerCase().includes(term);
-      const bookMatch = order.items.some((item) => item.bookTitle.toLowerCase().includes(term));
+      const bookMatch = (order.items || []).some((item) => item.bookTitle.toLowerCase().includes(term));
       return matchesStatus && (term ? orderIdMatch || bookMatch : true);
     });
   }, [orders, searchTerm, statusFilter]);

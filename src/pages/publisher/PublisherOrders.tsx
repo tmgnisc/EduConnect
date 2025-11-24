@@ -41,7 +41,7 @@ export default function PublisherOrders() {
     return orders.filter((order) => {
       const orderIdMatch = String(order.id).toLowerCase().includes(term);
       const schoolMatch = order.schoolName.toLowerCase().includes(term);
-      const bookMatch = order.items.some((item) => item.bookTitle.toLowerCase().includes(term));
+      const bookMatch = (order.items || []).some((item) => item.bookTitle.toLowerCase().includes(term));
       return term ? orderIdMatch || schoolMatch || bookMatch : true;
     });
   }, [orders, searchTerm]);
