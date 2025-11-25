@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { 
   GraduationCap, 
   BookOpen, 
@@ -9,10 +11,46 @@ import {
   Shield, 
   Zap,
   ArrowRight,
-  CheckCircle2
+  CheckCircle2,
+  Search,
+  Loader2
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { booksApi } from '@/services/api';
+import { Book } from '@/types';
+import { toast } from 'sonner';
 
 const Index = () => {
+  const [books, setBooks] = useState<Book[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    const fetchBooks = async () => {
+      try {
+        setLoading(true);
+        const response = await booksApi.getAll();
+        setBooks(response.data || []);
+      } catch (error: any) {
+        // Silently fail for public page - books are optional
+        console.error('Failed to load books:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBooks();
+  }, []);
+
+  const filteredBooks = books.filter(
+    (book) =>
+      book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      book.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      book.grade.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      book.author.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const displayedBooks = filteredBooks.slice(0, 6); // Show first 6 books
+
   const features = [
     {
       icon: BookOpen,
@@ -64,9 +102,21 @@ const Index = () => {
               <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
                 <GraduationCap className="w-6 h-6 text-white" />
               </div>
-              <span className="text-xl font-bold text-foreground">EduConnect</span>
+              <Link to="/">
+                <span className="text-xl font-bold text-foreground">EduConnect</span>
+              </Link>
             </div>
             <div className="flex items-center gap-4">
+              <Link to="/about">
+                <Button variant="ghost" className="hidden md:flex">
+                  About Us
+                </Button>
+              </Link>
+              <Link to="/services">
+                <Button variant="ghost" className="hidden md:flex">
+                  Services
+                </Button>
+              </Link>
               <Link to="/login">
                 <Button variant="ghost" className="hidden md:flex">
                   Sign In
@@ -118,6 +168,105 @@ const Index = () => {
               </Link>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Books Section */}
+      <section className="w-full py-12 md:py-20 px-4 md:px-20">
+        <div className="container mx-auto max-w-6xl">
+          <div className="text-center mb-12 md:mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              Featured Books
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Explore our collection of educational books from trusted publishers
+            </p>
+          </div>
+
+          <div className="mb-8 max-w-md mx-auto">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search books by title, subject, grade, or author..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          ) : displayedBooks.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              {searchTerm ? 'No books match your search.' : 'No books available at the moment.'}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+              {displayedBooks.map((book) => (
+                <Card key={book.id} className="border-border hover:shadow-medium transition-shadow flex flex-col">
+                  {book.coverImage ? (
+                    <img
+                      src={book.coverImage}
+                      alt={book.title}
+                      className="h-48 w-full object-cover rounded-t-xl"
+                    />
+                  ) : (
+                    <div className="h-48 w-full bg-gradient-primary rounded-t-xl flex items-center justify-center">
+                      <BookOpen className="w-12 h-12 text-white" />
+                    </div>
+                  )}
+                  <CardHeader>
+                    <CardTitle className="text-lg line-clamp-2">{book.title}</CardTitle>
+                    <CardDescription className="text-sm mt-1">by {book.author}</CardDescription>
+                    <div className="flex items-center gap-2 mt-3 flex-wrap">
+                      <Badge variant="outline" className="text-xs">
+                        {book.grade}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        {book.subject}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="flex-1 flex flex-col justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        {book.publisherName}
+                      </p>
+                      {book.description && (
+                        <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+                          {book.description}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between pt-4 border-t">
+                      <span className="text-xl font-bold text-foreground">
+                        NPR {book.price}
+                      </span>
+                      <Link to="/login">
+                        <Button size="sm" variant="outline">
+                          View Details
+                        </Button>
+                      </Link>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          {!loading && books.length > 6 && (
+            <div className="text-center mt-8">
+              <Link to="/login">
+                <Button variant="outline" size="lg">
+                  View All Books
+                  <ArrowRight className="ml-2 w-4 h-4" />
+                </Button>
+              </Link>
+            </div>
+          )}
         </div>
       </section>
 
