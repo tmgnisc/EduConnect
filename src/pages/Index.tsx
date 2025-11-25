@@ -18,7 +18,6 @@ import {
 import { useEffect, useState } from 'react';
 import { booksApi } from '@/services/api';
 import { Book } from '@/types';
-import { toast } from 'sonner';
 
 const Index = () => {
   const [books, setBooks] = useState<Book[]>([]);
@@ -391,14 +390,65 @@ const Index = () => {
       {/* Footer */}
       <footer className="w-full border-t border-border bg-card py-8 md:py-12 px-4 md:px-20">
         <div className="container mx-auto max-w-6xl">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-                <GraduationCap className="w-5 h-5 text-white" />
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
+                  <GraduationCap className="w-5 h-5 text-white" />
+                </div>
+                <span className="text-lg font-bold text-foreground">EduConnect</span>
               </div>
-              <span className="text-lg font-bold text-foreground">EduConnect</span>
+              <p className="text-sm text-muted-foreground">
+                Connecting schools, publishers, and educators in one platform.
+              </p>
             </div>
-            <p className="text-sm text-muted-foreground text-center md:text-right">
+            <div>
+              <h3 className="font-semibold text-foreground mb-4">Quick Links</h3>
+              <ul className="space-y-2">
+                <li>
+                  <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">
+                    Home
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/about" className="text-sm text-muted-foreground hover:text-foreground">
+                    About Us
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/services" className="text-sm text-muted-foreground hover:text-foreground">
+                    Services
+                  </Link>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold text-foreground mb-4">Account</h3>
+              <ul className="space-y-2">
+                <li>
+                  <Link to="/login" className="text-sm text-muted-foreground hover:text-foreground">
+                    Sign In
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/register" className="text-sm text-muted-foreground hover:text-foreground">
+                    Register
+                  </Link>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold text-foreground mb-4">Contact</h3>
+              <p className="text-sm text-muted-foreground">
+                Email: info@educonnect.com
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Phone: +977-1-XXXXXXX
+              </p>
+            </div>
+          </div>
+          <div className="border-t border-border pt-8">
+            <p className="text-sm text-muted-foreground text-center">
               © {new Date().getFullYear()} EduConnect. All rights reserved.
             </p>
           </div>

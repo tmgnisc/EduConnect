@@ -2,48 +2,75 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, Search, ShoppingCart } from 'lucide-react';
-import { useState } from 'react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { BookOpen, Search, ShoppingCart, Eye, Loader2, User, Mail, Building2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { booksApi, usersApi } from '@/services/api';
+import { Book, User as UserType } from '@/types';
+import { toast } from 'sonner';
+import { useCartStore } from '@/store/cartStore';
 
 export default function SchoolBooks() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [books, setBooks] = useState<Book[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [publisher, setPublisher] = useState<UserType | null>(null);
+  const [loadingPublisher, setLoadingPublisher] = useState(false);
+  const addToCart = useCartStore((state) => state.addItem);
 
-  const books = [
-    {
-      id: '1',
-      title: 'Mathematics Grade 8',
-      grade: 'Grade 8',
-      subject: 'Mathematics',
-      publisherName: 'ABC Publishers',
-      price: 500,
-      inLibrary: false,
-    },
-    {
-      id: '2',
-      title: 'Science Grade 9',
-      grade: 'Grade 9',
-      subject: 'Science',
-      publisherName: 'XYZ Publishers',
-      price: 550,
-      inLibrary: true,
-    },
-    {
-      id: '3',
-      title: 'English Grade 7',
-      grade: 'Grade 7',
-      subject: 'English',
-      publisherName: 'ABC Publishers',
-      price: 480,
-      inLibrary: false,
-    },
-  ];
+  useEffect(() => {
+    const fetchBooks = async () => {
+      try {
+        setLoading(true);
+        const response = await booksApi.getAll();
+        setBooks(response.data || []);
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || 'Failed to load books');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBooks();
+  }, []);
+
+  useEffect(() => {
+    const fetchPublisher = async () => {
+      if (!selectedBook?.publisherId) return;
+      try {
+        setLoadingPublisher(true);
+        const response = await usersApi.getAll();
+        const publishers = response.data || [];
+        const foundPublisher = publishers.find((p: UserType) => p.id === selectedBook.publisherId);
+        setPublisher(foundPublisher || null);
+      } catch (error: any) {
+        console.error('Failed to load publisher:', error);
+      } finally {
+        setLoadingPublisher(false);
+      }
+    };
+    fetchPublisher();
+  }, [selectedBook]);
 
   const filteredBooks = books.filter(
     (book) =>
       book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       book.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      book.grade.toLowerCase().includes(searchTerm.toLowerCase())
+      book.grade.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      book.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      book.publisherName.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleViewDetails = (book: Book) => {
+    setSelectedBook(book);
+    setDetailsOpen(true);
+  };
+
+  const handleAddToCart = (book: Book) => {
+    addToCart(book);
+    toast.success(`Added "${book.title}" to cart`);
+  };
 
   return (
     <div className="space-y-6">
@@ -72,47 +99,213 @@ export default function SchoolBooks() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredBooks.map((book) => (
-              <Card key={book.id} className="shadow-soft hover:shadow-medium transition-all duration-300">
-                <CardHeader>
-                  <div className="w-full h-32 bg-gradient-primary rounded-lg flex items-center justify-center mb-4">
-                    <BookOpen className="w-12 h-12 text-white" />
-                  </div>
-                  <CardTitle className="text-lg">{book.title}</CardTitle>
-                  <div className="flex items-center gap-2 mt-2">
-                    <Badge variant="outline" className="text-xs">
-                      {book.grade}
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      {book.subject}
-                    </Badge>
-                    {book.inLibrary && (
-                      <Badge className="text-xs bg-primary-light text-primary">
-                        In Library
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          ) : filteredBooks.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              {searchTerm ? 'No books match your search.' : 'No books available at the moment.'}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredBooks.map((book) => (
+                <Card key={book.id} className="shadow-soft hover:shadow-medium transition-all duration-300 flex flex-col">
+                  {book.coverImage ? (
+                    <img
+                      src={book.coverImage}
+                      alt={book.title}
+                      className="h-48 w-full object-cover rounded-t-xl"
+                    />
+                  ) : (
+                    <div className="w-full h-48 bg-gradient-primary rounded-t-xl flex items-center justify-center">
+                      <BookOpen className="w-12 h-12 text-white" />
+                    </div>
+                  )}
+                  <CardHeader>
+                    <CardTitle className="text-lg line-clamp-2">{book.title}</CardTitle>
+                    <p className="text-sm text-muted-foreground mt-1">by {book.author}</p>
+                    <div className="flex items-center gap-2 mt-2 flex-wrap">
+                      <Badge variant="outline" className="text-xs">
+                        {book.grade}
                       </Badge>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    {book.publisherName}
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xl font-bold text-foreground">
-                      NPR {book.price}
-                    </span>
-                    <Button size="sm" variant={book.inLibrary ? 'outline' : 'default'}>
-                      <ShoppingCart className="w-4 h-4 mr-2" />
-                      {book.inLibrary ? 'View' : 'Add to Cart'}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                      <Badge variant="outline" className="text-xs">
+                        {book.subject}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="flex-1 flex flex-col justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        {book.publisherName}
+                      </p>
+                      {book.description && (
+                        <p className="text-xs text-muted-foreground line-clamp-2 mb-4">
+                          {book.description}
+                        </p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xl font-bold text-foreground">
+                          NPR {book.price.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1"
+                          onClick={() => handleViewDetails(book)}
+                        >
+                          <Eye className="w-4 h-4 mr-2" />
+                          Details
+                        </Button>
+                        <Button
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => handleAddToCart(book)}
+                        >
+                          <ShoppingCart className="w-4 h-4 mr-2" />
+                          Add to Cart
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{selectedBook?.title ?? 'Book Details'}</DialogTitle>
+            <DialogDescription>
+              Comprehensive information about the selected book and publisher.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedBook && (
+            <div className="space-y-6">
+              {/* Book Cover */}
+              {selectedBook.coverImage ? (
+                <img
+                  src={selectedBook.coverImage}
+                  alt={selectedBook.title}
+                  className="w-full max-h-64 object-cover rounded-lg"
+                />
+              ) : (
+                <div className="w-full h-64 bg-gradient-primary rounded-lg flex items-center justify-center">
+                  <BookOpen className="w-16 h-16 text-white" />
+                </div>
+              )}
+
+              {/* Book Information */}
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-2xl font-bold text-foreground mb-2">{selectedBook.title}</h3>
+                  <p className="text-lg text-muted-foreground">by {selectedBook.author}</p>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Grade</p>
+                    <Badge variant="outline">{selectedBook.grade}</Badge>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Subject</p>
+                    <Badge variant="outline">{selectedBook.subject}</Badge>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">ISBN</p>
+                    <p className="font-medium text-sm">{selectedBook.isbn}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Price</p>
+                    <p className="font-bold text-lg text-primary">NPR {selectedBook.price.toFixed(2)}</p>
+                  </div>
+                </div>
+
+                {selectedBook.description && (
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-2">Description</p>
+                    <p className="text-sm text-foreground">{selectedBook.description}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Publisher Information */}
+              <div className="border-t pt-6">
+                <h4 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <Building2 className="w-5 h-5" />
+                  Publisher Information
+                </h4>
+                {loadingPublisher ? (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Loading publisher information...
+                  </div>
+                ) : publisher ? (
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 bg-gradient-primary rounded-full flex items-center justify-center flex-shrink-0">
+                        <User className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-foreground">
+                          {publisher.organizationName || publisher.name}
+                        </p>
+                        <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                          <Mail className="w-3 h-3" />
+                          {publisher.email}
+                        </p>
+                        {publisher.phone && (
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Phone: {publisher.phone}
+                          </p>
+                        )}
+                        {publisher.address && (
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Address: {publisher.address}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground">
+                    <p className="font-medium">{selectedBook.publisherName}</p>
+                    <p>Publisher details not available</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setDetailsOpen(false)}
+                >
+                  Close
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={() => {
+                    handleAddToCart(selectedBook);
+                    setDetailsOpen(false);
+                  }}
+                >
+                  <ShoppingCart className="w-4 h-4 mr-2" />
+                  Add to Cart
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

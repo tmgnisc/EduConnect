@@ -8,6 +8,8 @@ import { DashboardLayout } from "@/components/layouts/DashboardLayout";
 
 // Landing Page
 import Index from "./pages/Index";
+import About from "./pages/About";
+import Services from "./pages/Services";
 
 // Auth Pages
 import Login from "./pages/Login";
@@ -30,6 +32,7 @@ import PublisherFeedback from "./pages/publisher/PublisherFeedback.tsx";
 
 // School Pages
 import SchoolDashboard from "./pages/school/SchoolDashboard";
+import SchoolBooks from "./pages/school/SchoolBooks";
 import SchoolCart from "./pages/school/SchoolCart";
 import SchoolOrders from "./pages/school/SchoolOrders";
 import SchoolProgress from "./pages/school/SchoolProgress";
@@ -51,6 +54,8 @@ const App = () => {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/services" element={<Services />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<RoleSelection />} />
             <Route path="/register/publisher" element={<PublisherRegister />} />
@@ -96,11 +101,12 @@ const App = () => {
                 </ProtectedRoute>
               }
             >
-              <Route index element={<SchoolDashboard />} />
-              <Route path="cart" element={<SchoolCart />} />
-              <Route path="orders" element={<SchoolOrders />} />
-              <Route path="progress" element={<SchoolProgress />} />
-              <Route path="feedback" element={<SchoolFeedback />} />
+            <Route index element={<SchoolDashboard />} />
+            <Route path="books" element={<SchoolBooks />} />
+            <Route path="cart" element={<SchoolCart />} />
+            <Route path="orders" element={<SchoolOrders />} />
+            <Route path="progress" element={<SchoolProgress />} />
+            <Route path="feedback" element={<SchoolFeedback />} />
             </Route>
 
             {/* Settings Route (accessible by all authenticated users) */}
