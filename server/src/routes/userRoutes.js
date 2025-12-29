@@ -5,6 +5,10 @@ const roleMiddleware = require('../middleware/roleMiddleware');
 
 const router = express.Router();
 
+// Public endpoint for publishers (for landing page)
+router.get('/publishers/public', listPublishers);
+
+// Protected endpoint for publishers (for authenticated users)
 router.get(
   '/publishers',
   authMiddleware,

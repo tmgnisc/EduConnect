@@ -23,9 +23,9 @@ const listPublishers = async (req, res, next) => {
   try {
     const publishers = await getPublishers();
     const filtered =
-      req.user.role === 'school'
+      req.user && req.user.role === 'school'
         ? publishers.filter((publisher) => publisher.status === 'approved')
-        : publishers;
+        : publishers.filter((publisher) => publisher.status === 'approved'); // Public endpoint shows only approved
     res.json({ data: filtered });
   } catch (error) {
     next(error);

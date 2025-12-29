@@ -7,8 +7,9 @@ const roleMiddleware = require('../middleware/roleMiddleware');
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
-router.get('/', authMiddleware, listBooks);
-router.get('/:id', authMiddleware, fetchBook);
+// Public routes - accessible without authentication
+router.get('/', listBooks);
+router.get('/:id', fetchBook);
 router.post('/', authMiddleware, roleMiddleware('publisher', 'admin'), upload.single('cover'), addBook);
 router.put('/:id', authMiddleware, roleMiddleware('publisher', 'admin'), upload.single('cover'), editBook);
 router.delete('/:id', authMiddleware, roleMiddleware('publisher', 'admin'), removeBook);
