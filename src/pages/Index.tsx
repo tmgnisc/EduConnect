@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { 
   GraduationCap, 
   BookOpen, 
@@ -12,43 +11,70 @@ import {
   Zap,
   ArrowRight,
   CheckCircle2,
-  Search,
-  Loader2
+  Loader2,
+  Building2,
+  Star
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { booksApi } from '@/services/api';
-import { Book } from '@/types';
+import { booksApi, usersApi } from '@/services/api';
+import { Book, User } from '@/types';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 const Index = () => {
   const [books, setBooks] = useState<Book[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [publishers, setPublishers] = useState<User[]>([]);
+  const [loadingBooks, setLoadingBooks] = useState(true);
+  const [loadingPublishers, setLoadingPublishers] = useState(true);
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  const heroImages = [
+    'https://images.unsplash.com/photo-1569728723358-d1a317aa7fba?q=80&w=1074&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+    'https://images.unsplash.com/photo-1716329106544-612b35aa9f8e?q=80&w=1061&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+    'https://images.unsplash.com/photo-1518373714866-3f1478910cc0?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  ];
+
+  // Auto-play carousel
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % heroImages.length);
+    }, 5000); // Change slide every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [heroImages.length]);
 
   useEffect(() => {
-    const fetchBooks = async () => {
+    const fetchData = async () => {
+      // Fetch books
       try {
-        setLoading(true);
-        const response = await booksApi.getAll();
-        setBooks(response.data || []);
+        setLoadingBooks(true);
+        const booksResponse = await booksApi.getAll();
+        setBooks(booksResponse.data || []);
       } catch (error: any) {
-        // Silently fail for public page - books are optional
         console.error('Failed to load books:', error);
       } finally {
-        setLoading(false);
+        setLoadingBooks(false);
+      }
+
+      // Fetch publishers
+      try {
+        setLoadingPublishers(true);
+        const publishersResponse = await usersApi.getPublishersPublic();
+        setPublishers(publishersResponse.data || []);
+      } catch (error: any) {
+        console.error('Failed to load publishers:', error);
+      } finally {
+        setLoadingPublishers(false);
       }
     };
-    fetchBooks();
+
+    fetchData();
   }, []);
-
-  const filteredBooks = books.filter(
-    (book) =>
-      book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      book.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      book.grade.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      book.author.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const displayedBooks = filteredBooks.slice(0, 6); // Show first 6 books
 
   const features = [
     {
@@ -133,133 +159,178 @@ const Index = () => {
       </nav>
 
       {/* Hero Section */}
-      <section className="w-full py-12 md:py-20 lg:py-32 px-4 md:px-20">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center space-y-6 md:space-y-8">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary-light rounded-full text-primary text-sm font-medium">
+      <section className="relative w-full min-h-[90vh] flex items-center justify-center overflow-hidden">
+        {/* Background Image Slider */}
+        <div className="absolute inset-0 w-full h-full">
+          {heroImages.map((image, index) => (
+            <div
+              key={index}
+              className={`absolute inset-0 w-full h-full bg-cover bg-center bg-no-repeat transition-opacity duration-1000 ease-in-out ${
+                index === currentSlide ? 'opacity-100' : 'opacity-0'
+              }`}
+              style={{
+                backgroundImage: `url('${image}')`
+              }}
+            />
+          ))}
+        </div>
+        
+        {/* Dark Overlay for better text readability */}
+        <div className="absolute inset-0 bg-black/50 z-[1]"></div>
+        
+        {/* Content */}
+        <div className="container mx-auto px-4 md:px-20 py-20 md:py-32 relative z-10">
+          <div className="max-w-5xl mx-auto text-center space-y-8 md:space-y-12">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/90 backdrop-blur-sm border border-primary/20 rounded-full text-white text-sm font-medium">
               <Zap className="w-4 h-4" />
               <span>Transforming Education Together</span>
             </div>
             
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight">
+            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight drop-shadow-lg">
               Connect, Learn, and{' '}
-              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              <span className="text-primary-light">
                 Grow
               </span>
             </h1>
             
-            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto leading-relaxed drop-shadow-md">
               The all-in-one platform connecting schools, publishers, and educators. 
               Access premium content, track progress, and collaborate seamlessly.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-6">
               <Link to="/register">
-                <Button size="lg" className="w-full sm:w-auto text-base px-8">
+                <Button size="lg" className="w-full sm:w-auto text-base px-8 py-6 text-lg bg-primary hover:bg-primary/90 text-white shadow-lg">
                   Start Free Trial
                   <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
               </Link>
               <Link to="/login">
-                <Button size="lg" variant="outline" className="w-full sm:w-auto text-base px-8">
+                <Button size="lg" variant="outline" className="w-full sm:w-auto text-base px-8 py-6 text-lg bg-white/10 hover:bg-white/20 text-white border-white/20 backdrop-blur-sm">
                   Sign In
                 </Button>
               </Link>
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-8 pt-12 md:pt-16">
+              <div className="text-center">
+                <div className="text-3xl md:text-4xl font-bold text-primary-light mb-2 drop-shadow-lg">
+                  {books.length > 0 ? `${books.length}+` : '100+'}
+                </div>
+                <div className="text-sm md:text-base text-white/90">Books Available</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl md:text-4xl font-bold text-primary-light mb-2 drop-shadow-lg">
+                  {publishers.length > 0 ? `${publishers.length}+` : '50+'}
+                </div>
+                <div className="text-sm md:text-base text-white/90">Publishers</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl md:text-4xl font-bold text-primary-light mb-2 drop-shadow-lg">1000+</div>
+                <div className="text-sm md:text-base text-white/90">Active Schools</div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Books Section */}
-      <section className="w-full py-12 md:py-20 px-4 md:px-20">
-        <div className="container mx-auto max-w-6xl">
+      {/* Books Carousel Section */}
+      <section className="w-full py-16 md:py-24 px-4 md:px-20 bg-muted/30">
+        <div className="container mx-auto max-w-7xl">
           <div className="text-center mb-12 md:mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
               Featured Books
             </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
               Explore our collection of educational books from trusted publishers
             </p>
           </div>
 
-          <div className="mb-8 max-w-md mx-auto">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search books by title, subject, grade, or author..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </div>
-
-          {loading ? (
+          {loadingBooks ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
-          ) : displayedBooks.length === 0 ? (
+          ) : books.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
-              {searchTerm ? 'No books match your search.' : 'No books available at the moment.'}
+              <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-50" />
+              <p className="text-lg">No books available at the moment.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-              {displayedBooks.map((book) => (
-                <Card key={book.id} className="border-border hover:shadow-medium transition-shadow flex flex-col">
-                  {book.coverImage ? (
-                    <img
-                      src={book.coverImage}
-                      alt={book.title}
-                      className="h-48 w-full object-cover rounded-t-xl"
-                    />
-                  ) : (
-                    <div className="h-48 w-full bg-gradient-primary rounded-t-xl flex items-center justify-center">
-                      <BookOpen className="w-12 h-12 text-white" />
-                    </div>
-                  )}
-                  <CardHeader>
-                    <CardTitle className="text-lg line-clamp-2">{book.title}</CardTitle>
-                    <CardDescription className="text-sm mt-1">by {book.author}</CardDescription>
-                    <div className="flex items-center gap-2 mt-3 flex-wrap">
-                      <Badge variant="outline" className="text-xs">
-                        {book.grade}
-                      </Badge>
-                      <Badge variant="outline" className="text-xs">
-                        {book.subject}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="flex-1 flex flex-col justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {book.publisherName}
-                      </p>
-                      {book.description && (
-                        <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-                          {book.description}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex items-center justify-between pt-4 border-t">
-                      <span className="text-xl font-bold text-foreground">
-                        NPR {book.price}
-                      </span>
-                      <Link to="/login">
-                        <Button size="sm" variant="outline">
-                          View Details
-                        </Button>
-                      </Link>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+            <div className="relative">
+              <Carousel
+                opts={{
+                  align: "start",
+                  loop: true,
+                }}
+                className="w-full"
+              >
+                <CarouselContent className="-ml-2 md:-ml-4">
+                  {books.map((book) => (
+                    <CarouselItem key={book.id} className="pl-2 md:pl-4 basis-full md:basis-1/2 lg:basis-1/3">
+                      <Card className="border-border hover:shadow-lg transition-all duration-300 hover:scale-105 flex flex-col h-full">
+                        {book.coverImage ? (
+                          <div className="relative h-64 w-full overflow-hidden rounded-t-xl">
+                            <img
+                              src={book.coverImage}
+                              alt={book.title}
+                              className="h-full w-full object-cover"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                          </div>
+                        ) : (
+                          <div className="h-64 w-full bg-gradient-primary rounded-t-xl flex items-center justify-center">
+                            <BookOpen className="w-16 h-16 text-white" />
+                          </div>
+                        )}
+                        <CardHeader>
+                          <CardTitle className="text-xl line-clamp-2">{book.title}</CardTitle>
+                          <CardDescription className="text-sm mt-1">by {book.author}</CardDescription>
+                          <div className="flex items-center gap-2 mt-3 flex-wrap">
+                            <Badge variant="outline" className="text-xs">
+                              {book.grade}
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {book.subject}
+                            </Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="flex-1 flex flex-col justify-between">
+                          <div>
+                            <p className="text-sm text-muted-foreground mb-2 font-medium">
+                              {book.publisherName}
+                            </p>
+                            {book.description && (
+                              <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+                                {book.description}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex items-center justify-between pt-4 border-t">
+                            <span className="text-2xl font-bold text-foreground">
+                              NPR {book.price}
+                            </span>
+                            <Link to="/login">
+                              <Button size="sm" variant="outline">
+                                View Details
+                              </Button>
+                            </Link>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                <CarouselPrevious className="hidden md:flex -left-12" />
+                <CarouselNext className="hidden md:flex -right-12" />
+              </Carousel>
             </div>
           )}
 
-          {!loading && books.length > 6 && (
-            <div className="text-center mt-8">
+          {!loadingBooks && books.length > 0 && (
+            <div className="text-center mt-12">
               <Link to="/login">
-                <Button variant="outline" size="lg">
+                <Button variant="outline" size="lg" className="text-base px-8">
                   View All Books
                   <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
@@ -269,8 +340,78 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Publishers Section */}
+      <section className="w-full py-16 md:py-24 px-4 md:px-20">
+        <div className="container mx-auto max-w-7xl">
+          <div className="text-center mb-12 md:mb-16">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
+              Trusted Publishers
+            </h2>
+            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
+              Connect with verified educational publishers and access their premium content
+            </p>
+          </div>
+
+          {loadingPublishers ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          ) : publishers.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <Building2 className="w-16 h-16 mx-auto mb-4 opacity-50" />
+              <p className="text-lg">No publishers available at the moment.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+              {publishers.map((publisher) => (
+                <Card key={publisher.id} className="border-border hover:shadow-lg transition-all duration-300 hover:scale-105">
+                  <CardHeader>
+                    <div className="flex items-start gap-4">
+                      <div className="w-16 h-16 bg-gradient-primary rounded-lg flex items-center justify-center flex-shrink-0">
+                        <Building2 className="w-8 h-8 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <CardTitle className="text-xl mb-1 line-clamp-1">
+                          {publisher.organizationName || publisher.name}
+                        </CardTitle>
+                        <CardDescription className="line-clamp-1">
+                          {publisher.email}
+                        </CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between">
+                      <Badge variant="secondary" className="text-xs">
+                        <CheckCircle2 className="w-3 h-3 mr-1" />
+                        Verified Publisher
+                      </Badge>
+                      <div className="flex items-center gap-1 text-yellow-500">
+                        <Star className="w-4 h-4 fill-current" />
+                        <span className="text-sm font-medium">4.8</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          {!loadingPublishers && publishers.length > 0 && (
+            <div className="text-center mt-12">
+              <Link to="/register">
+                <Button size="lg" className="text-base px-8">
+                  Become a Publisher
+                  <ArrowRight className="ml-2 w-4 h-4" />
+                </Button>
+              </Link>
+            </div>
+          )}
+        </div>
+      </section>
+
       {/* Features Section */}
-      <section className="w-full py-12 md:py-20 px-4 md:px-20 bg-muted/30">
+      <section className="w-full py-16 md:py-24 px-4 md:px-20 bg-muted/30">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-12 md:mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
@@ -305,7 +446,7 @@ const Index = () => {
       </section>
 
       {/* Benefits Section */}
-      <section className="w-full py-12 md:py-20 px-4 md:px-20">
+      <section className="w-full py-16 md:py-24 px-4 md:px-20">
         <div className="container mx-auto max-w-6xl">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 md:gap-16 items-center">
             <div>
@@ -363,7 +504,7 @@ const Index = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="w-full py-12 md:py-20 px-4 md:px-20 bg-primary-light">
+      <section className="w-full py-16 md:py-24 px-4 md:px-20 bg-primary-light">
         <div className="container mx-auto max-w-4xl text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
             Ready to Transform Your Education Experience?

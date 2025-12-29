@@ -6,6 +6,7 @@ export interface User {
   name: string;
   role: UserRole;
   status: 'pending' | 'approved' | 'rejected';
+  organizationName?: string;
   documentUrl?: string;
   createdAt: string;
 }

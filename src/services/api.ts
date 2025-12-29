@@ -32,7 +32,19 @@ apiClient.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('auth-storage');
-      window.location.href = '/login';
+      // Only redirect to login if not on a public route
+      const publicRoutes = ['/', '/about', '/services', '/register', '/login'];
+      const currentPath = window.location.pathname;
+      const isPublicRoute = publicRoutes.some(route => {
+        if (route === '/') {
+          return currentPath === '/';
+        }
+        return currentPath === route || currentPath.startsWith(route + '/');
+      });
+      
+      if (!isPublicRoute) {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
@@ -116,6 +128,11 @@ export const usersApi = {
 
   getPublishers: async () => {
     const response = await apiClient.get("/users/publishers");
+    return response.data;
+  },
+
+  getPublishersPublic: async () => {
+    const response = await apiClient.get("/users/publishers/public");
     return response.data;
   },
 
