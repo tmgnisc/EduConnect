@@ -1,10 +1,12 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ShoppingCart, Trash2, Plus, Minus, ArrowRight, Loader2, CreditCard } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { ShoppingCart, Trash2, Plus, Minus, ArrowRight, Loader2, CreditCard, Wallet } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { paymentsApi, ordersApi } from '@/services/api';
 import { toast } from 'sonner';
@@ -19,6 +21,7 @@ const stripePromise = publishableKey ? loadStripe(publishableKey) : null;
 
 export default function SchoolCart() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuthStore();
   const cartItems = useCartStore((state) => state.items);
   const updateQuantity = useCartStore((state) => state.updateQuantity);
@@ -26,6 +29,7 @@ export default function SchoolCart() {
   const clearCart = useCartStore((state) => state.clearCart);
 
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'esewa'>('esewa');
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [isPreparingPayment, setIsPreparingPayment] = useState(false);
 
@@ -33,25 +37,92 @@ export default function SchoolCart() {
   const tax = subtotal * 0.13;
   const total = subtotal + tax;
 
+  // Check for payment callback
+  useEffect(() => {
+    const paymentStatus = searchParams.get('payment');
+    const orderId = searchParams.get('orderId');
+    
+    if (paymentStatus === 'success') {
+      clearCart();
+      toast.success('Payment successful! Order placed.');
+      navigate('/school/orders');
+    } else if (paymentStatus === 'failed') {
+      toast.error('Payment failed. Please try again.');
+    }
+  }, [searchParams, navigate, clearCart]);
+
   const handleCheckout = async () => {
     if (!cartItems.length) {
       toast.error('Your cart is empty.');
       return;
     }
-    if (!stripePromise) {
-      toast.error('Stripe publishable key is missing. Please set it in your env file.');
-      return;
-    }
 
-    try {
-      setIsPreparingPayment(true);
-      const response = await paymentsApi.createIntent(total);
-      setClientSecret(response.clientSecret);
-      setPaymentDialogOpen(true);
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Unable to start payment. Please try again.');
-    } finally {
-      setIsPreparingPayment(false);
+    if (paymentMethod === 'stripe') {
+      if (!stripePromise) {
+        toast.error('Stripe publishable key is missing. Please set it in your env file.');
+        return;
+      }
+
+      try {
+        setIsPreparingPayment(true);
+        const response = await paymentsApi.createIntent(total);
+        setClientSecret(response.clientSecret);
+        setPaymentDialogOpen(true);
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || 'Unable to start payment. Please try again.');
+      } finally {
+        setIsPreparingPayment(false);
+      }
+    } else if (paymentMethod === 'esewa') {
+      // Create order first, then redirect to eSewa
+      try {
+        setIsPreparingPayment(true);
+        
+        // Create order with pending payment status
+        const orderResponse = await ordersApi.create({
+          items: cartItems.map((item) => ({
+            bookId: item.id,
+            bookTitle: item.title,
+            quantity: item.quantity,
+            price: item.price,
+          })),
+          total,
+          paymentStatus: 'pending',
+        });
+
+        const orderId = orderResponse.data?.id || orderResponse.id;
+        
+        // Get eSewa payment URL
+        const paymentResponse = await paymentsApi.createEsewaPayment(
+          total,
+          orderId,
+          cartItems.map((item) => ({
+            bookId: item.id,
+            bookTitle: item.title,
+            quantity: item.quantity,
+            price: item.price,
+          }))
+        );
+
+        // Create form and submit to eSewa
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = paymentResponse.paymentUrl;
+        
+        Object.entries(paymentResponse.params).forEach(([key, value]) => {
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = key;
+          input.value = value as string;
+          form.appendChild(input);
+        });
+
+        document.body.appendChild(form);
+        form.submit();
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || 'Unable to start payment. Please try again.');
+        setIsPreparingPayment(false);
+      }
     }
   };
 
@@ -171,19 +242,42 @@ export default function SchoolCart() {
                   <span className="font-bold text-foreground">NPR {total.toFixed(2)}</span>
                 </div>
               </div>
-              <Button className="w-full" size="lg" onClick={handleCheckout} disabled={!cartItems.length || isPreparingPayment}>
-                {isPreparingPayment ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Preparing Checkout...
-                  </>
-                ) : (
-                  <>
-                    Proceed to Checkout
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </>
-                )}
-              </Button>
+              <div className="space-y-4">
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium">Payment Method</Label>
+                  <RadioGroup value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as 'stripe' | 'esewa')}>
+                    <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-muted/50 cursor-pointer">
+                      <RadioGroupItem value="esewa" id="esewa" />
+                      <Label htmlFor="esewa" className="flex items-center gap-2 cursor-pointer flex-1">
+                        <Wallet className="w-4 h-4" />
+                        <span>eSewa</span>
+                      </Label>
+                    </div>
+                    {stripePromise && (
+                      <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-muted/50 cursor-pointer">
+                        <RadioGroupItem value="stripe" id="stripe" />
+                        <Label htmlFor="stripe" className="flex items-center gap-2 cursor-pointer flex-1">
+                          <CreditCard className="w-4 h-4" />
+                          <span>Credit/Debit Card (Stripe)</span>
+                        </Label>
+                      </div>
+                    )}
+                  </RadioGroup>
+                </div>
+                <Button className="w-full" size="lg" onClick={handleCheckout} disabled={!cartItems.length || isPreparingPayment}>
+                  {isPreparingPayment ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Preparing Checkout...
+                    </>
+                  ) : (
+                    <>
+                      Proceed to Checkout
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </>
+                  )}
+                </Button>
+              </div>
               <Button variant="outline" className="w-full" onClick={handleContinueShopping}>
                 Continue Shopping
               </Button>

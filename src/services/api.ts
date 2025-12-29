@@ -147,6 +147,15 @@ export const paymentsApi = {
     const response = await apiClient.post('/payments/intent', { amount });
     return response.data;
   },
+  
+  createEsewaPayment: async (amount: number, orderId: string, items: any[]) => {
+    const response = await apiClient.post('/payments/esewa/create', { 
+      amount, 
+      orderId,
+      items 
+    });
+    return response.data;
+  },
 };
 
 export const progressApi = {

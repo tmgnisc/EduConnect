@@ -15,10 +15,12 @@ import {
   Layers,
   BookMarked,
   ImageIcon,
+  DollarSign,
+  TrendingUp,
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { booksApi } from '@/services/api';
-import { Book } from '@/types';
+import { booksApi, ordersApi } from '@/services/api';
+import { Book, Order } from '@/types';
 import { bookSchema } from '@/lib/validations';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/store/authStore';
@@ -40,7 +42,9 @@ export default function PublisherDashboard() {
   const currentUser = useAuthStore((state) => state.user);
   const currentUserId = currentUser?.id ? String(currentUser.id) : undefined;
   const [books, setBooks] = useState<Book[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingOrders, setLoadingOrders] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingBook, setEditingBook] = useState<Book | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
@@ -67,14 +71,73 @@ export default function PublisherDashboard() {
     }
   };
 
+  const fetchOrders = async () => {
+    try {
+      setLoadingOrders(true);
+      const response = await ordersApi.getAll();
+      setOrders(response.data || []);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to load orders');
+    } finally {
+      setLoadingOrders(false);
+    }
+  };
+
   useEffect(() => {
     fetchBooks();
+    fetchOrders();
   }, []);
 
   const myBooks = useMemo(
     () => (currentUserId ? books.filter((book) => book.publisherId === currentUserId) : []),
     [books, currentUserId]
   );
+
+  // Calculate sales and profit metrics
+  const salesMetrics = useMemo(() => {
+    if (!currentUserId || !orders.length) {
+      return {
+        totalSales: 0,
+        totalBooksSold: 0,
+        netRevenue: 0,
+        profitMargin: 0,
+        platformFee: 0,
+      };
+    }
+
+    // Get all publisher's book IDs
+    const publisherBookIds = new Set(myBooks.map((book) => book.id));
+
+    // Calculate sales from orders
+    let totalSales = 0;
+    let totalBooksSold = 0;
+
+    orders.forEach((order) => {
+      if (order.items && order.paymentStatus === 'completed') {
+        order.items.forEach((item) => {
+          if (publisherBookIds.has(item.bookId)) {
+            const itemRevenue = item.price * item.quantity;
+            totalSales += itemRevenue;
+            totalBooksSold += item.quantity;
+          }
+        });
+      }
+    });
+
+    // Platform fee (10% of sales)
+    const platformFeeRate = 0.1;
+    const platformFee = totalSales * platformFeeRate;
+    const netRevenue = totalSales - platformFee;
+    const profitMargin = totalSales > 0 ? (netRevenue / totalSales) * 100 : 0;
+
+    return {
+      totalSales,
+      totalBooksSold,
+      netRevenue,
+      profitMargin,
+      platformFee,
+    };
+  }, [orders, myBooks, currentUserId]);
 
   const stats = useMemo(
     () => [
@@ -96,8 +159,26 @@ export default function PublisherDashboard() {
         icon: BookMarked,
         color: 'bg-accent-light text-accent',
       },
+      {
+        title: 'Total Sales',
+        value: loadingOrders ? '—' : `NPR ${salesMetrics.totalSales.toFixed(2)}`,
+        icon: DollarSign,
+        color: 'bg-primary-light text-primary',
+      },
+      {
+        title: 'Books Sold',
+        value: loadingOrders ? '—' : salesMetrics.totalBooksSold.toString(),
+        icon: BookOpen,
+        color: 'bg-secondary-light text-secondary',
+      },
+      {
+        title: 'Profit Margin',
+        value: loadingOrders ? '—' : `${salesMetrics.profitMargin.toFixed(1)}%`,
+        icon: TrendingUp,
+        color: 'bg-accent-light text-accent',
+      },
     ],
-    [myBooks]
+    [myBooks, salesMetrics, loadingOrders]
   );
 
   const openDialog = (book?: Book) => {
@@ -176,7 +257,7 @@ export default function PublisherDashboard() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {stats.map((stat) => (
           <Card key={stat.title} className="shadow-soft">
             <CardHeader className="flex items-center justify-between">
@@ -187,6 +268,16 @@ export default function PublisherDashboard() {
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold">{stat.value}</p>
+              {stat.title === 'Profit Margin' && salesMetrics.totalSales > 0 && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  Net Revenue: NPR {salesMetrics.netRevenue.toFixed(2)}
+                </p>
+              )}
+              {stat.title === 'Total Sales' && salesMetrics.totalSales > 0 && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  Platform Fee: NPR {salesMetrics.platformFee.toFixed(2)} (10%)
+                </p>
+              )}
             </CardContent>
           </Card>
         ))}
