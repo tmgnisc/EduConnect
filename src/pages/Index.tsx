@@ -194,7 +194,7 @@ const Index = () => {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative w-full min-h-[60vh] md:min-h-[70vh] flex items-center justify-center overflow-hidden">
+      <section className="relative w-full min-h-[45vh] md:min-h-[50vh] flex items-center justify-center overflow-hidden">
         {/* Background Image Slider */}
         <div className="absolute inset-0 w-full h-full">
           {heroImages.map((image, index) => (
@@ -214,56 +214,56 @@ const Index = () => {
         <div className="absolute inset-0 bg-black/50 z-[1]"></div>
         
         {/* Content */}
-        <div className="container mx-auto px-4 md:px-20 py-20 md:py-32 relative z-10">
-          <div className="max-w-5xl mx-auto text-center space-y-8 md:space-y-12">
+        <div className="container mx-auto px-4 md:px-20 py-10 md:py-12 relative z-10">
+          <div className="max-w-5xl mx-auto text-center space-y-4 md:space-y-6">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/90 backdrop-blur-sm border border-primary/20 rounded-full text-white text-sm font-medium">
               <Zap className="w-4 h-4" />
               <span>Transforming Education Together</span>
             </div>
             
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight drop-shadow-lg">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight drop-shadow-lg">
               Connect, Learn, and{' '}
               <span className="text-primary-light">
                 Grow
               </span>
             </h1>
             
-            <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto leading-relaxed drop-shadow-md">
+            <p className="text-lg md:text-xl text-white/90 max-w-3xl mx-auto leading-relaxed drop-shadow-md">
               The all-in-one platform connecting schools, publishers, and educators. 
               Access premium content, track progress, and collaborate seamlessly.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-6">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
               <Link to="/register">
-                <Button size="lg" className="w-full sm:w-auto text-base px-8 py-6 text-lg bg-primary hover:bg-primary/90 text-white shadow-lg">
+                <Button size="lg" className="w-full sm:w-auto text-base px-6 py-5 bg-primary hover:bg-primary/90 text-white shadow-lg">
                   Start Free Trial
-                  <ArrowRight className="ml-2 w-5 h-5" />
+                  <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
               </Link>
               <Link to="/login">
-                <Button size="lg" variant="outline" className="w-full sm:w-auto text-base px-8 py-6 text-lg bg-white/10 hover:bg-white/20 text-white border-white/20 backdrop-blur-sm">
+                <Button size="lg" variant="outline" className="w-full sm:w-auto text-base px-6 py-5 bg-white/10 hover:bg-white/20 text-white border-white/20 backdrop-blur-sm">
                   Sign In
                 </Button>
               </Link>
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-8 pt-12 md:pt-16">
+            <div className="grid grid-cols-3 gap-4 md:gap-8 pt-6 md:pt-8">
               <div className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-primary-light mb-2 drop-shadow-lg">
+                <div className="text-2xl md:text-3xl font-bold text-primary-light mb-1 drop-shadow-lg">
                   {books.length > 0 ? `${books.length}+` : '100+'}
                 </div>
-                <div className="text-sm md:text-base text-white/90">Books Available</div>
+                <div className="text-xs md:text-sm text-white/90">Books Available</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-primary-light mb-2 drop-shadow-lg">
+                <div className="text-2xl md:text-3xl font-bold text-primary-light mb-1 drop-shadow-lg">
                   {publishers.length > 0 ? `${publishers.length}+` : '50+'}
                 </div>
-                <div className="text-sm md:text-base text-white/90">Publishers</div>
+                <div className="text-xs md:text-sm text-white/90">Publishers</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-primary-light mb-2 drop-shadow-lg">1000+</div>
-                <div className="text-sm md:text-base text-white/90">Active Schools</div>
+                <div className="text-2xl md:text-3xl font-bold text-primary-light mb-1 drop-shadow-lg">1000+</div>
+                <div className="text-xs md:text-sm text-white/90">Active Schools</div>
               </div>
             </div>
           </div>
@@ -286,7 +286,7 @@ const Index = () => {
         </button>
 
         {/* Slider Dots Indicator */}
-        <div className="absolute bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 md:gap-3 bg-black/20 backdrop-blur-sm px-4 md:px-6 py-2 md:py-3 rounded-full">
+        <div className="absolute bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 md:gap-3 bg-black/20 backdrop-blur-sm px-4 md:px-5 py-2 rounded-full">
           {heroImages.map((_, index) => (
             <button
               key={index}
