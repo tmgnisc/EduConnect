@@ -96,8 +96,15 @@ const About = () => {
       </nav>
 
       {/* Hero Section */}
-      <section className="w-full py-12 md:py-20 lg:py-32 px-4 md:px-20">
-        <div className="container mx-auto max-w-6xl">
+      <section 
+        className="relative w-full py-12 md:py-20 lg:py-32 px-4 md:px-20 bg-cover bg-center bg-no-repeat"
+        style={{ 
+          backgroundImage: `url('https://plus.unsplash.com/premium_photo-1677567996070-68fa4181775a?q=80&w=1172&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')`,
+          backgroundAttachment: 'fixed'
+        }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-br from-background/95 via-background/90 to-background/95 z-[1]"></div>
+        <div className="container mx-auto max-w-6xl relative z-10">
           <div className="text-center space-y-6 md:space-y-8">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight">
               About <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">EduConnect</span>
