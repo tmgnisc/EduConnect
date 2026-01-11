@@ -507,43 +507,8 @@ const Index = () => {
               <img 
                 src="https://plus.unsplash.com/premium_photo-1750530064487-9f357338dd90?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
                 alt="Why Choose EduConnect"
-                className="w-full h-96 object-cover"
+                className="w-full h-full object-cover min-h-[500px]"
               />
-            </div>
-            <div className="relative">
-              <div 
-                className="relative rounded-2xl p-8 md:p-12 text-white space-y-6 shadow-large overflow-hidden"
-                style={{
-                  backgroundImage: "url('https://plus.unsplash.com/premium_photo-1664300897489-fd98eee64faf?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')",
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/90 to-primary/70 z-0"></div>
-                <div className="relative z-10">
-                  <div className="flex items-center gap-3">
-                    <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                      <BookOpen className="w-8 h-8" />
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-bold">Join EduConnect</h3>
-                      <p className="text-white/90">Start your journey today</p>
-                    </div>
-                  </div>
-                  <p className="text-lg text-white/90">
-                    Whether you're a school administrator, publisher, or educator, 
-                    EduConnect provides the tools you need to succeed in modern education.
-                  </p>
-                  <div className="pt-4">
-                    <Link to="/register">
-                      <Button size="lg" variant="secondary" className="w-full hover:scale-105 transition-transform duration-200">
-                        Create Your Account
-                        <ArrowRight className="ml-2 w-5 h-5" />
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>

@@ -155,7 +155,7 @@ const Services = () => {
                 </Button>
               </Link>
               <Link to="/register">
-                <Button className="w-full md:w-auto">
+                <Button className="w-full md:w-auto hover:scale-105 transition-transform duration-200">
                   Get Started
                   <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
@@ -187,12 +187,12 @@ const Services = () => {
             {services.map((service, index) => {
               const Icon = service.icon;
               return (
-                <Card key={index} className="border-border hover:shadow-medium transition-shadow flex flex-col">
+                <Card key={index} className="border-border hover:shadow-xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-2 flex flex-col group">
                   <CardHeader>
-                    <div className="w-12 h-12 bg-gradient-primary rounded-lg flex items-center justify-center mb-4">
+                    <div className="w-12 h-12 bg-gradient-primary rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
                       <Icon className="w-6 h-6 text-white" />
                     </div>
-                    <CardTitle className="text-xl">{service.title}</CardTitle>
+                    <CardTitle className="text-xl group-hover:text-primary transition-colors">{service.title}</CardTitle>
                   </CardHeader>
                   <CardContent className="flex-1 flex flex-col">
                     <p className="text-base text-muted-foreground mb-4">
@@ -228,9 +228,9 @@ const Services = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
             {benefits.map((benefit, index) => (
-              <Card key={index} className="border-border hover:shadow-medium transition-shadow">
+              <Card key={index} className="border-border hover:shadow-xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-2 group">
                 <CardHeader>
-                  <CardTitle className="text-xl">{benefit.title}</CardTitle>
+                  <CardTitle className="text-xl group-hover:text-primary transition-colors">{benefit.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-3">

@@ -16,6 +16,7 @@ import {
   ShoppingCart,
   Percent,
   TrendingUp,
+  Download,
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { booksApi, ordersApi } from '@/services/api';
@@ -271,6 +272,69 @@ export default function PublisherDashboard() {
 
   const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
+  const generatePDFReport = () => {
+    // Create report content
+    const reportContent = `
+PUBLISHER SALES REPORT
+Generated: ${new Date().toLocaleDateString()}
+Publisher: ${currentUser?.organizationName || currentUser?.name}
+
+==============================================
+SUMMARY STATISTICS
+==============================================
+Total Books Published: ${myBooks.length}
+Total Sales: NPR ${salesMetrics.totalSales.toFixed(2)}
+Books Sold: ${salesMetrics.totalBooksSold} units
+Net Revenue: NPR ${salesMetrics.netRevenue.toFixed(2)}
+Platform Fee (10%): NPR ${salesMetrics.platformFee.toFixed(2)}
+Profit Margin: ${salesMetrics.profitMargin.toFixed(2)}%
+
+==============================================
+TOP PERFORMING BOOKS
+==============================================
+${topBooksData.map((book, index) => 
+  `${index + 1}. ${book.name}
+   Units Sold: ${book.sold}
+   Revenue: NPR ${book.revenue.toFixed(2)}`
+).join('\n\n')}
+
+==============================================
+MONTHLY SALES TREND
+==============================================
+${monthlySalesData.map(data => 
+  `${data.month}: NPR ${data.revenue.toFixed(2)}`
+).join('\n')}
+
+==============================================
+BOOK CATALOG
+==============================================
+${myBooks.map((book, index) => 
+  `${index + 1}. ${book.title}
+   Author: ${book.author}
+   Grade: ${book.grade} | Subject: ${book.subject}
+   Price: NPR ${book.price.toFixed(2)}
+   ISBN: ${book.isbn}`
+).join('\n\n')}
+
+==============================================
+End of Report
+==============================================
+    `.trim();
+
+    // Create blob and download
+    const blob = new Blob([reportContent], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Publisher_Report_${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    
+    toast.success('Report downloaded successfully');
+  };
+
   const openDialog = (book?: Book) => {
     if (book) {
       setEditingBook(book);
@@ -341,10 +405,16 @@ export default function PublisherDashboard() {
           <h1 className="text-3xl font-bold text-foreground">Publisher Dashboard</h1>
           <p className="text-muted-foreground mt-2">Manage your catalog and keep it up to date.</p>
         </div>
-        <Button onClick={() => openDialog()} className="flex items-center gap-2">
-          <Plus className="w-4 h-4" />
-          Add Book
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={generatePDFReport} variant="outline" className="flex items-center gap-2">
+            <Download className="w-4 h-4" />
+            Download Report
+          </Button>
+          <Button onClick={() => openDialog()} className="flex items-center gap-2">
+            <Plus className="w-4 h-4" />
+            Add Book
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

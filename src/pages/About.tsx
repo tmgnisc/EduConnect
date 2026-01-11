@@ -85,7 +85,7 @@ const About = () => {
                 </Button>
               </Link>
               <Link to="/register">
-                <Button className="w-full md:w-auto">
+                <Button className="w-full md:w-auto hover:scale-105 transition-transform duration-200">
                   Get Started
                   <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
@@ -186,12 +186,12 @@ const About = () => {
             {values.map((value, index) => {
               const Icon = value.icon;
               return (
-                <Card key={index} className="border-border hover:shadow-medium transition-shadow">
+                <Card key={index} className="border-border hover:shadow-xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-2 group">
                   <CardHeader>
-                    <div className="w-12 h-12 bg-gradient-primary rounded-lg flex items-center justify-center mb-4">
+                    <div className="w-12 h-12 bg-gradient-primary rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
                       <Icon className="w-6 h-6 text-white" />
                     </div>
-                    <CardTitle className="text-xl">{value.title}</CardTitle>
+                    <CardTitle className="text-xl group-hover:text-primary transition-colors">{value.title}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-base text-muted-foreground">
@@ -219,12 +219,12 @@ const About = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
             {team.map((member, index) => (
-              <Card key={index} className="border-border hover:shadow-medium transition-shadow">
+              <Card key={index} className="border-border hover:shadow-xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-2 group">
                 <CardHeader>
-                  <div className="w-16 h-16 bg-gradient-primary rounded-full flex items-center justify-center mb-4 mx-auto">
+                  <div className="w-16 h-16 bg-gradient-primary rounded-full flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform duration-300">
                     <Users className="w-8 h-8 text-white" />
                   </div>
-                  <CardTitle className="text-xl text-center">{member.name}</CardTitle>
+                  <CardTitle className="text-xl text-center group-hover:text-primary transition-colors">{member.name}</CardTitle>
                   <p className="text-sm text-muted-foreground text-center">{member.role}</p>
                 </CardHeader>
                 <CardContent>
