@@ -1,4 +1,6 @@
-const { getAllUsers, updateUserStatus, getPublishers } = require('../services/userService');
+const { getAllUsers, updateUserStatus, getPublishers, updateProfileImage, updatePassword } = require('../services/userService');
+const { uploadImage } = require('../services/cloudinaryService');
+const bcrypt = require('bcryptjs');
 
 const listUsers = async (req, res, next) => {
   try {
@@ -32,9 +34,54 @@ const listPublishers = async (req, res, next) => {
   }
 };
 
+const uploadProfileImage = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Profile image is required' });
+    }
+
+    const uploaded = await uploadImage(req.file.buffer, 'profile-images');
+    const profileImage = uploaded.secure_url;
+
+    const updatedUser = await updateProfileImage(req.user.id, profileImage);
+    res.json({ data: updatedUser, message: 'Profile image updated successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const changePassword = async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'Current and new password are required' });
+    }
+
+    // Verify current password
+    const { findAuthByEmail } = require('../services/userService');
+    const user = await findAuthByEmail(req.user.email);
+    
+    const isValidPassword = await bcrypt.compare(currentPassword, user.password);
+    if (!isValidPassword) {
+      return res.status(401).json({ message: 'Current password is incorrect' });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await updatePassword(req.user.id, hashedPassword);
+
+    res.json({ message: 'Password changed successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   listUsers,
   changeUserStatus,
   listPublishers,
+  uploadProfileImage,
+  changePassword,
 };
 

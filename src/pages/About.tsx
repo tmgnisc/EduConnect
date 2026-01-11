@@ -58,10 +58,8 @@ const About = () => {
         <div className="container mx-auto px-4 md:px-20 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
-                <GraduationCap className="w-6 h-6 text-white" />
-              </div>
-              <Link to="/">
+              <Link to="/" className="flex items-center gap-2">
+                <img src="/logo.jpeg" alt="EduConnect Logo" className="w-10 h-10 rounded-lg object-cover" />
                 <span className="text-xl font-bold text-foreground">EduConnect</span>
               </Link>
             </div>
@@ -272,9 +270,7 @@ const About = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-                  <GraduationCap className="w-5 h-5 text-white" />
-                </div>
+                <img src="/logo.jpeg" alt="EduConnect Logo" className="w-8 h-8 rounded-lg object-cover" />
                 <span className="text-lg font-bold text-foreground">EduConnect</span>
               </div>
               <p className="text-sm text-muted-foreground">

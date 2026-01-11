@@ -140,6 +140,23 @@ export const usersApi = {
     const response = await apiClient.patch(`/users/${id}/status`, { status });
     return response.data;
   },
+
+  uploadProfileImage: async (file: File) => {
+    const formData = new FormData();
+    formData.append('profileImage', file);
+    const response = await apiClient.post('/users/profile-image', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
+  changePassword: async (currentPassword: string, newPassword: string) => {
+    const response = await apiClient.post('/users/change-password', {
+      currentPassword,
+      newPassword,
+    });
+    return response.data;
+  },
 };
 
 export const paymentsApi = {

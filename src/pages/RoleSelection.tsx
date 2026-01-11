@@ -27,8 +27,8 @@ export default function RoleSelection() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-light via-background to-accent-light p-4">
       <div className="w-full max-w-4xl space-y-8">
         <div className="text-center space-y-4">
-          <div className="mx-auto w-20 h-20 bg-gradient-primary rounded-full flex items-center justify-center">
-            <GraduationCap className="w-10 h-10 text-white" />
+          <div className="mx-auto w-20 h-20 rounded-full flex items-center justify-center overflow-hidden">
+            <img src="/logo.jpeg" alt="EduConnect Logo" className="w-full h-full object-cover" />
           </div>
           <h1 className="text-4xl font-bold">Join EduConnect</h1>
           <p className="text-lg text-muted-foreground">

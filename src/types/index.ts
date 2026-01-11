@@ -8,6 +8,7 @@ export interface User {
   status: 'pending' | 'approved' | 'rejected';
   organizationName?: string;
   documentUrl?: string;
+  profileImage?: string;
   createdAt: string;
 }
 

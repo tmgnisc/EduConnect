@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
-  GraduationCap, 
   BookOpen, 
   Users, 
   TrendingUp, 
@@ -13,18 +12,13 @@ import {
   CheckCircle2,
   Loader2,
   Building2,
-  Star
+  Star,
+  Menu,
+  X
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { booksApi, usersApi } from '@/services/api';
 import { Book, User } from '@/types';
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
 
 const Index = () => {
   const [books, setBooks] = useState<Book[]>([]);
@@ -32,6 +26,7 @@ const Index = () => {
   const [loadingBooks, setLoadingBooks] = useState(true);
   const [loadingPublishers, setLoadingPublishers] = useState(true);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const heroImages = [
     'https://images.unsplash.com/photo-1569728723358-d1a317aa7fba?q=80&w=1074&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
@@ -103,7 +98,7 @@ const Index = () => {
       description: 'Lightning-fast access to resources and seamless user experience',
     },
     {
-      icon: GraduationCap,
+      icon: CheckCircle2,
       title: 'Expert Support',
       description: 'Get help from our dedicated education support team',
     },
@@ -124,42 +119,79 @@ const Index = () => {
         <div className="container mx-auto px-4 md:px-20 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
-                <GraduationCap className="w-6 h-6 text-white" />
-              </div>
-              <Link to="/">
+              <Link to="/" className="flex items-center gap-2">
+                <img src="/logo.jpeg" alt="EduConnect Logo" className="w-10 h-10 rounded-lg object-cover" />
                 <span className="text-xl font-bold text-foreground">EduConnect</span>
               </Link>
             </div>
-            <div className="flex items-center gap-4">
+            
+            {/* Desktop Menu */}
+            <div className="hidden md:flex items-center gap-4">
               <Link to="/about">
-                <Button variant="ghost" className="hidden md:flex">
+                <Button variant="ghost">
                   About Us
                 </Button>
               </Link>
               <Link to="/services">
-                <Button variant="ghost" className="hidden md:flex">
+                <Button variant="ghost">
                   Services
                 </Button>
               </Link>
               <Link to="/login">
-                <Button variant="ghost" className="hidden md:flex">
+                <Button variant="ghost">
                   Sign In
                 </Button>
               </Link>
               <Link to="/register">
-                <Button className="w-full md:w-auto">
+                <Button>
                   Get Started
                   <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
               </Link>
             </div>
+
+            {/* Mobile Menu Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </Button>
           </div>
+
+          {/* Mobile Menu */}
+          {mobileMenuOpen && (
+            <div className="md:hidden mt-4 pb-4 space-y-2 border-t border-border pt-4">
+              <Link to="/about" onClick={() => setMobileMenuOpen(false)}>
+                <Button variant="ghost" className="w-full justify-start">
+                  About Us
+                </Button>
+              </Link>
+              <Link to="/services" onClick={() => setMobileMenuOpen(false)}>
+                <Button variant="ghost" className="w-full justify-start">
+                  Services
+                </Button>
+              </Link>
+              <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+                <Button variant="ghost" className="w-full justify-start">
+                  Sign In
+                </Button>
+              </Link>
+              <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
+                <Button className="w-full">
+                  Get Started
+                  <ArrowRight className="ml-2 w-4 h-4" />
+                </Button>
+              </Link>
+            </div>
+          )}
         </div>
       </nav>
 
       {/* Hero Section */}
-      <section className="relative w-full min-h-[90vh] flex items-center justify-center overflow-hidden">
+      <section className="relative w-full min-h-[60vh] md:min-h-[70vh] flex items-center justify-center overflow-hidden">
         {/* Background Image Slider */}
         <div className="absolute inset-0 w-full h-full">
           {heroImages.map((image, index) => (
@@ -257,74 +289,62 @@ const Index = () => {
               <p className="text-lg">No books available at the moment.</p>
             </div>
           ) : (
-            <div className="relative">
-              <Carousel
-                opts={{
-                  align: "start",
-                  loop: true,
-                }}
-                className="w-full"
-              >
-                <CarouselContent className="-ml-2 md:-ml-4">
-                  {books.map((book) => (
-                    <CarouselItem key={book.id} className="pl-2 md:pl-4 basis-full md:basis-1/2 lg:basis-1/3">
-                      <Card className="border-border hover:shadow-lg transition-all duration-300 hover:scale-105 flex flex-col h-full">
-                        {book.coverImage ? (
-                          <div className="relative h-64 w-full overflow-hidden rounded-t-xl">
-                            <img
-                              src={book.coverImage}
-                              alt={book.title}
-                              className="h-full w-full object-cover"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-                          </div>
-                        ) : (
-                          <div className="h-64 w-full bg-gradient-primary rounded-t-xl flex items-center justify-center">
-                            <BookOpen className="w-16 h-16 text-white" />
-                          </div>
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {books.slice(0, 6).map((book) => (
+                  <Card key={book.id} className="border-border hover:shadow-lg transition-all duration-300 hover:scale-105 flex flex-col h-full">
+                    {book.coverImage ? (
+                      <div className="relative h-64 w-full overflow-hidden rounded-t-xl">
+                        <img
+                          src={book.coverImage}
+                          alt={book.title}
+                          className="h-full w-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                      </div>
+                    ) : (
+                      <div className="h-64 w-full bg-gradient-primary rounded-t-xl flex items-center justify-center">
+                        <BookOpen className="w-16 h-16 text-white" />
+                      </div>
+                    )}
+                    <CardHeader>
+                      <CardTitle className="text-xl line-clamp-2">{book.title}</CardTitle>
+                      <CardDescription className="text-sm mt-1">by {book.author}</CardDescription>
+                      <div className="flex items-center gap-2 mt-3 flex-wrap">
+                        <Badge variant="outline" className="text-xs">
+                          {book.grade}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {book.subject}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="flex-1 flex flex-col justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-2 font-medium">
+                          {book.publisherName}
+                        </p>
+                        {book.description && (
+                          <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+                            {book.description}
+                          </p>
                         )}
-                        <CardHeader>
-                          <CardTitle className="text-xl line-clamp-2">{book.title}</CardTitle>
-                          <CardDescription className="text-sm mt-1">by {book.author}</CardDescription>
-                          <div className="flex items-center gap-2 mt-3 flex-wrap">
-                            <Badge variant="outline" className="text-xs">
-                              {book.grade}
-                            </Badge>
-                            <Badge variant="outline" className="text-xs">
-                              {book.subject}
-                            </Badge>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="flex-1 flex flex-col justify-between">
-                          <div>
-                            <p className="text-sm text-muted-foreground mb-2 font-medium">
-                              {book.publisherName}
-                            </p>
-                            {book.description && (
-                              <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-                                {book.description}
-                              </p>
-                            )}
-                          </div>
-                          <div className="flex items-center justify-between pt-4 border-t">
-                            <span className="text-2xl font-bold text-foreground">
-                              NPR {book.price}
-                            </span>
-                            <Link to="/login">
-                              <Button size="sm" variant="outline">
-                                View Details
-                              </Button>
-                            </Link>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-                <CarouselPrevious className="hidden md:flex -left-12" />
-                <CarouselNext className="hidden md:flex -right-12" />
-              </Carousel>
-            </div>
+                      </div>
+                      <div className="flex items-center justify-between pt-4 border-t">
+                        <span className="text-2xl font-bold text-foreground">
+                          NPR {book.price}
+                        </span>
+                        <Link to="/login">
+                          <Button size="sm" variant="outline">
+                            View Details
+                          </Button>
+                        </Link>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </>
           )}
 
           {!loadingBooks && books.length > 0 && (
@@ -478,7 +498,7 @@ const Index = () => {
               <div className="bg-gradient-hero rounded-2xl p-8 md:p-12 text-white space-y-6 shadow-large">
                 <div className="flex items-center gap-3">
                   <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                    <GraduationCap className="w-8 h-8" />
+                    <BookOpen className="w-8 h-8" />
                   </div>
                   <div>
                     <h3 className="text-2xl font-bold">Join EduConnect</h3>
@@ -534,9 +554,7 @@ const Index = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-                  <GraduationCap className="w-5 h-5 text-white" />
-                </div>
+                <img src="/logo.jpeg" alt="EduConnect Logo" className="w-8 h-8 rounded-lg object-cover" />
                 <span className="text-lg font-bold text-foreground">EduConnect</span>
               </div>
               <p className="text-sm text-muted-foreground">

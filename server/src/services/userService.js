@@ -8,6 +8,7 @@ const mapUser = (row) => ({
   status: row.status,
   organizationName: row.organization_name,
   documentUrl: row.document_url,
+  profileImage: row.profile_image,
   createdAt: row.created_at,
 });
 
@@ -18,7 +19,7 @@ const findAuthByEmail = async (email) => {
 
 const findUserById = async (id) => {
   const [rows] = await pool.query(
-    'SELECT id, name, email, role, status, document_url, created_at FROM users WHERE id = ?',
+    'SELECT id, name, email, role, status, organization_name, document_url, profile_image, created_at FROM users WHERE id = ?',
     [id]
   );
   return rows[0] ? mapUser(rows[0]) : null;
@@ -53,14 +54,14 @@ const createUser = async ({
 
 const getAllUsers = async () => {
   const [rows] = await pool.query(
-    'SELECT id, name, email, role, status, organization_name, document_url, created_at FROM users ORDER BY created_at DESC'
+    'SELECT id, name, email, role, status, organization_name, document_url, profile_image, created_at FROM users ORDER BY created_at DESC'
   );
   return rows.map(mapUser);
 };
 
 const getPublishers = async () => {
   const [rows] = await pool.query(
-    `SELECT id, name, email, role, status, organization_name, document_url, created_at
+    `SELECT id, name, email, role, status, organization_name, document_url, profile_image, created_at
      FROM users
      WHERE role = 'publisher'
      ORDER BY created_at DESC`
@@ -73,6 +74,16 @@ const updateUserStatus = async (id, status) => {
   return findUserById(id);
 };
 
+const updateProfileImage = async (id, profileImage) => {
+  await pool.query('UPDATE users SET profile_image = ? WHERE id = ?', [profileImage, id]);
+  return findUserById(id);
+};
+
+const updatePassword = async (id, hashedPassword) => {
+  await pool.query('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, id]);
+  return findUserById(id);
+};
+
 module.exports = {
   findAuthByEmail,
   findUserById,
@@ -80,5 +91,7 @@ module.exports = {
   getAllUsers,
   getPublishers,
   updateUserStatus,
+  updateProfileImage,
+  updatePassword,
 };
 

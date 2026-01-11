@@ -8,14 +8,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { GraduationCap } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { z } from 'zod';
+import { useState } from 'react';
 
 type LoginForm = z.infer<typeof loginSchema>;
 
 export default function Login() {
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
@@ -47,8 +49,8 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-light via-background to-accent-light p-4">
       <Card className="w-full max-w-md shadow-large">
         <CardHeader className="space-y-4 text-center">
-          <div className="mx-auto w-16 h-16 bg-gradient-primary rounded-full flex items-center justify-center">
-            <GraduationCap className="w-8 h-8 text-white" />
+          <div className="mx-auto w-16 h-16 rounded-full flex items-center justify-center overflow-hidden">
+            <img src="/logo.jpeg" alt="EduConnect Logo" className="w-full h-full object-cover" />
           </div>
           <CardTitle className="text-3xl font-bold">Welcome to EduConnect</CardTitle>
           <CardDescription>Sign in to access your dashboard</CardDescription>
@@ -71,13 +73,22 @@ export default function Login() {
 
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                {...register('password')}
-                className={errors.password ? 'border-destructive' : ''}
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  {...register('password')}
+                  className={errors.password ? 'border-destructive' : ''}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
               {errors.password && (
                 <p className="text-sm text-destructive">{errors.password.message}</p>
               )}

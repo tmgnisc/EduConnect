@@ -47,10 +47,15 @@ export const Sidebar = () => {
   return (
     <aside className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col">
       <div className="p-6 border-b border-sidebar-border">
-        <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-          EduConnect
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1 capitalize">{user?.role}</p>
+        <div className="flex items-center gap-3">
+          <img src="/logo.jpeg" alt="EduConnect Logo" className="w-10 h-10 rounded-lg object-cover" />
+          <div>
+            <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+              EduConnect
+            </h1>
+            <p className="text-sm text-muted-foreground capitalize">{user?.role}</p>
+          </div>
+        </div>
       </div>
 
       <nav className="flex-1 p-4 space-y-1">

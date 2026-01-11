@@ -2,13 +2,19 @@ import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { usersApi, booksApi, ordersApi } from '@/services/api';
 import { User, Book, Order } from '@/types';
 import { toast } from 'sonner';
 import { useCartStore } from '@/store/cartStore';
-import { ShoppingCart, Users, BookOpen, LibraryBig, Loader2 } from 'lucide-react';
+import { useAuthStore } from '@/store/authStore';
+import { ShoppingCart, Users, BookOpen, LibraryBig, Loader2, Upload, User as UserIcon, Lock } from 'lucide-react';
 
 export default function SchoolDashboard() {
+  const currentUser = useAuthStore((state) => state.user);
+  const setUser = useAuthStore((state) => state.setUser);
   const addToCart = useCartStore((state) => state.addItem);
   const cartItems = useCartStore((state) => state.items);
 
@@ -19,6 +25,13 @@ export default function SchoolDashboard() {
   const [loadingBooks, setLoadingBooks] = useState(true);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
+  const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
 
   const fetchPublishers = async () => {
     try {
@@ -57,6 +70,58 @@ export default function SchoolDashboard() {
       toast.error(error.response?.data?.message || 'Failed to load orders');
     } finally {
       setLoadingOrders(false);
+    }
+  };
+
+  const handleProfileImageUpload = async () => {
+    if (!profileImageFile) {
+      toast.error('Please select an image');
+      return;
+    }
+
+    try {
+      setUploadingImage(true);
+      const response = await usersApi.uploadProfileImage(profileImageFile);
+      if (response.data && currentUser) {
+        setUser({ ...currentUser, profileImage: response.data.profileImage });
+        toast.success('Profile image updated successfully');
+        setProfileImageFile(null);
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to upload image');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!currentPassword || !newPassword || !confirmNewPassword) {
+      toast.error('All password fields are required');
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      toast.error('New passwords do not match');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error('New password must be at least 6 characters');
+      return;
+    }
+
+    try {
+      setChangingPassword(true);
+      await usersApi.changePassword(currentPassword, newPassword);
+      toast.success('Password changed successfully');
+      setChangePasswordOpen(false);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmNewPassword('');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to change password');
+    } finally {
+      setChangingPassword(false);
     }
   };
 
@@ -138,6 +203,76 @@ export default function SchoolDashboard() {
           </Card>
         ))}
       </div>
+
+      {/* Profile Section */}
+      <Card className="shadow-soft">
+        <CardHeader>
+          <CardTitle>Profile Settings</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex flex-col md:flex-row gap-6 items-start">
+            {/* Profile Image Section */}
+            <div className="flex flex-col items-center gap-4">
+              <div className="w-32 h-32 rounded-full overflow-hidden bg-muted flex items-center justify-center">
+                {currentUser?.profileImage ? (
+                  <img
+                    src={currentUser.profileImage}
+                    alt={currentUser.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <UserIcon className="w-16 h-16 text-muted-foreground" />
+                )}
+              </div>
+              <div className="space-y-2 w-full">
+                <Label htmlFor="profileImage">Upload Profile Image</Label>
+                <Input
+                  id="profileImage"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setProfileImageFile(e.target.files?.[0] || null)}
+                  disabled={uploadingImage}
+                />
+                {profileImageFile && (
+                  <Button
+                    onClick={handleProfileImageUpload}
+                    disabled={uploadingImage}
+                    size="sm"
+                    className="w-full"
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    {uploadingImage ? 'Uploading...' : 'Upload'}
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Profile Info Section */}
+            <div className="flex-1 space-y-4">
+              <div>
+                <Label className="text-sm text-muted-foreground">Name</Label>
+                <p className="text-lg font-semibold">{currentUser?.name}</p>
+              </div>
+              <div>
+                <Label className="text-sm text-muted-foreground">Email</Label>
+                <p className="text-lg">{currentUser?.email}</p>
+              </div>
+              <div>
+                <Label className="text-sm text-muted-foreground">School</Label>
+                <p className="text-lg">{currentUser?.organizationName || 'N/A'}</p>
+              </div>
+              <Button
+                onClick={() => setChangePasswordOpen(true)}
+                variant="outline"
+                className="mt-4"
+              >
+                <Lock className="w-4 h-4 mr-2" />
+                Change Password
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
         <Card className="shadow-soft">
@@ -288,6 +423,69 @@ export default function SchoolDashboard() {
           )}
         </CardContent>
       </Card>
+
+      {/* Change Password Dialog */}
+      <Dialog open={changePasswordOpen} onOpenChange={setChangePasswordOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change Password</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="currentPassword">Current Password</Label>
+              <Input
+                id="currentPassword"
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="Enter current password"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">New Password</Label>
+              <Input
+                id="newPassword"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Enter new password"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmNewPassword">Confirm New Password</Label>
+              <Input
+                id="confirmNewPassword"
+                type="password"
+                value={confirmNewPassword}
+                onChange={(e) => setConfirmNewPassword(e.target.value)}
+                placeholder="Confirm new password"
+              />
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setChangePasswordOpen(false);
+                  setCurrentPassword('');
+                  setNewPassword('');
+                  setConfirmNewPassword('');
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleChangePassword}
+                className="flex-1"
+                disabled={changingPassword}
+              >
+                {changingPassword ? 'Changing...' : 'Change Password'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
