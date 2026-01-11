@@ -123,4 +123,11 @@ These are intercepted on the client store layer so you can preview dashboards be
 
 ---
 
-Happy building! Let me know if you’d like seed data, Docker compose, or automated tests next.
+## 📚 Additional Documentation
+
+- [Superadmin Setup Guide](./SUPERADMIN_SETUP.md) - Instructions for creating and managing superadmin accounts
+- [Email Notifications Setup](./EMAIL_SETUP.md) - Configure email notifications for users
+
+---
+
+Happy building! Let me know if you'd like seed data, Docker compose, or automated tests next.

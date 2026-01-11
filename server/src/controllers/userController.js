@@ -1,5 +1,6 @@
 const { getAllUsers, updateUserStatus, getPublishers, updateProfileImage, updatePassword } = require('../services/userService');
 const { uploadImage } = require('../services/cloudinaryService');
+const { sendApprovalEmail, sendPasswordChangeConfirmation } = require('../services/emailService');
 const bcrypt = require('bcryptjs');
 
 const listUsers = async (req, res, next) => {
@@ -15,6 +16,16 @@ const changeUserStatus = async (req, res, next) => {
   try {
     const { status } = req.body;
     const user = await updateUserStatus(req.params.id, status);
+    
+    // Send email notification
+    if (user) {
+      sendApprovalEmail({
+        to: user.email,
+        name: user.name,
+        status: status,
+      });
+    }
+    
     res.json({ data: user });
   } catch (error) {
     next(error);
@@ -70,6 +81,12 @@ const changePassword = async (req, res, next) => {
     // Hash new password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     await updatePassword(req.user.id, hashedPassword);
+
+    // Send confirmation email
+    sendPasswordChangeConfirmation({
+      to: user.email,
+      name: user.name,
+    });
 
     res.json({ message: 'Password changed successfully' });
   } catch (error) {
