@@ -127,6 +127,28 @@ These are intercepted on the client store layer so you can preview dashboards be
 
 - [Superadmin Setup Guide](./SUPERADMIN_SETUP.md) - Instructions for creating and managing superadmin accounts
 - [Email Notifications Setup](./EMAIL_SETUP.md) - Configure email notifications for users
+- [Java Backend](./Java%20Backend/README.md) - Spring Boot MVC implementation (demonstration)
+
+---
+
+## 🔧 Backend Options
+
+This project includes **two backend implementations**:
+
+### 1. **Node.js Backend** (Primary - Currently Active)
+- Location: `server/`
+- Framework: Express.js
+- Database: MySQL
+- Currently integrated with the frontend
+- Full API documentation in server code
+
+### 2. **Java Backend** (Demonstration)
+- Location: `Java Backend/`
+- Framework: Spring Boot 3.2.0
+- Architecture: MVC with proper layering
+- Fully functional REST API with JWT authentication
+- Complete documentation included
+- For learning/reference purposes
 
 ---
 
