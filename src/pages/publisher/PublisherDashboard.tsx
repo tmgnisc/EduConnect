@@ -10,26 +10,35 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   BookOpen,
   Plus,
-  FilePenLine,
-  Trash2,
   Layers,
   BookMarked,
-  ImageIcon,
   DollarSign,
-  TrendingUp,
-  Upload,
-  User,
-  Lock,
   ShoppingCart,
   Percent,
+  TrendingUp,
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { booksApi, ordersApi, usersApi } from '@/services/api';
+import { booksApi, ordersApi } from '@/services/api';
 import { Book, Order } from '@/types';
 import { bookSchema } from '@/lib/validations';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/store/authStore';
 import { z } from 'zod';
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
 
 type BookFormValues = z.infer<typeof bookSchema>;
 
@@ -45,7 +54,6 @@ const defaultValues: BookFormValues = {
 
 export default function PublisherDashboard() {
   const currentUser = useAuthStore((state) => state.user);
-  const setUser = useAuthStore((state) => state.setUser);
   const currentUserId = currentUser?.id ? String(currentUser.id) : undefined;
   const [books, setBooks] = useState<Book[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -54,13 +62,6 @@ export default function PublisherDashboard() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingBook, setEditingBook] = useState<Book | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
-  const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmNewPassword, setConfirmNewPassword] = useState('');
-  const [changingPassword, setChangingPassword] = useState(false);
 
   const {
     register,
@@ -181,7 +182,7 @@ export default function PublisherDashboard() {
       {
         title: 'Books Sold',
         value: loadingOrders ? '—' : salesMetrics.totalBooksSold.toString(),
-        icon: BookOpen,
+        icon: ShoppingCart,
         color: 'bg-secondary-light text-secondary',
       },
       {
@@ -193,6 +194,82 @@ export default function PublisherDashboard() {
     ],
     [myBooks, salesMetrics, loadingOrders]
   );
+
+  // Chart Data: Monthly Sales Trend
+  const monthlySalesData = useMemo(() => {
+    if (!orders.length) return [];
+
+    const publisherBookIds = new Set(myBooks.map((book) => book.id));
+    const monthlyData: { [key: string]: number } = {};
+
+    orders.forEach((order) => {
+      if (order.paymentStatus === 'completed' && order.items) {
+        const date = new Date(order.createdAt);
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+        order.items.forEach((item) => {
+          if (publisherBookIds.has(item.bookId)) {
+            monthlyData[monthKey] = (monthlyData[monthKey] || 0) + item.price * item.quantity;
+          }
+        });
+      }
+    });
+
+    return Object.entries(monthlyData)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-6)
+      .map(([month, revenue]) => ({
+        month: new Date(month + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+        revenue: Number(revenue.toFixed(2)),
+      }));
+  }, [orders, myBooks]);
+
+  // Chart Data: Top Performing Books
+  const topBooksData = useMemo(() => {
+    if (!orders.length) return [];
+
+    const publisherBookIds = new Set(myBooks.map((book) => book.id));
+    const bookSales: { [key: string]: { title: string; sold: number; revenue: number } } = {};
+
+    orders.forEach((order) => {
+      if (order.paymentStatus === 'completed' && order.items) {
+        order.items.forEach((item) => {
+          if (publisherBookIds.has(item.bookId)) {
+            if (!bookSales[item.bookId]) {
+              bookSales[item.bookId] = {
+                title: item.bookTitle,
+                sold: 0,
+                revenue: 0,
+              };
+            }
+            bookSales[item.bookId].sold += item.quantity;
+            bookSales[item.bookId].revenue += item.price * item.quantity;
+          }
+        });
+      }
+    });
+
+    return Object.values(bookSales)
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 5)
+      .map((book) => ({
+        name: book.title.length > 20 ? book.title.substring(0, 20) + '...' : book.title,
+        sold: book.sold,
+        revenue: Number(book.revenue.toFixed(2)),
+      }));
+  }, [orders, myBooks]);
+
+  // Chart Data: Revenue Breakdown
+  const revenueBreakdownData = useMemo(() => {
+    if (salesMetrics.totalSales === 0) return [];
+
+    return [
+      { name: 'Net Revenue', value: Number(salesMetrics.netRevenue.toFixed(2)) },
+      { name: 'Platform Fee (10%)', value: Number(salesMetrics.platformFee.toFixed(2)) },
+    ];
+  }, [salesMetrics]);
+
+  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
   const openDialog = (book?: Book) => {
     if (book) {
@@ -257,58 +334,6 @@ export default function PublisherDashboard() {
     }
   };
 
-  const handleProfileImageUpload = async () => {
-    if (!profileImageFile) {
-      toast.error('Please select an image');
-      return;
-    }
-
-    try {
-      setUploadingImage(true);
-      const response = await usersApi.uploadProfileImage(profileImageFile);
-      if (response.data && currentUser) {
-        setUser({ ...currentUser, profileImage: response.data.profileImage });
-        toast.success('Profile image updated successfully');
-        setProfileImageFile(null);
-      }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to upload image');
-    } finally {
-      setUploadingImage(false);
-    }
-  };
-
-  const handleChangePassword = async () => {
-    if (!currentPassword || !newPassword || !confirmNewPassword) {
-      toast.error('All password fields are required');
-      return;
-    }
-
-    if (newPassword !== confirmNewPassword) {
-      toast.error('New passwords do not match');
-      return;
-    }
-
-    if (newPassword.length < 6) {
-      toast.error('New password must be at least 6 characters');
-      return;
-    }
-
-    try {
-      setChangingPassword(true);
-      await usersApi.changePassword(currentPassword, newPassword);
-      toast.success('Password changed successfully');
-      setChangePasswordOpen(false);
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmNewPassword('');
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to change password');
-    } finally {
-      setChangingPassword(false);
-    }
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -321,76 +346,6 @@ export default function PublisherDashboard() {
           Add Book
         </Button>
       </div>
-
-      {/* Profile Section */}
-      <Card className="shadow-soft">
-        <CardHeader>
-          <CardTitle>Profile Settings</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex flex-col md:flex-row gap-6 items-start">
-            {/* Profile Image Section */}
-            <div className="flex flex-col items-center gap-4">
-              <div className="w-32 h-32 rounded-full overflow-hidden bg-muted flex items-center justify-center">
-                {currentUser?.profileImage ? (
-                  <img
-                    src={currentUser.profileImage}
-                    alt={currentUser.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <User className="w-16 h-16 text-muted-foreground" />
-                )}
-              </div>
-              <div className="space-y-2 w-full">
-                <Label htmlFor="profileImage">Upload Profile Image</Label>
-                <Input
-                  id="profileImage"
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setProfileImageFile(e.target.files?.[0] || null)}
-                  disabled={uploadingImage}
-                />
-                {profileImageFile && (
-                  <Button
-                    onClick={handleProfileImageUpload}
-                    disabled={uploadingImage}
-                    size="sm"
-                    className="w-full"
-                  >
-                    <Upload className="w-4 h-4 mr-2" />
-                    {uploadingImage ? 'Uploading...' : 'Upload'}
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            {/* Profile Info Section */}
-            <div className="flex-1 space-y-4">
-              <div>
-                <Label className="text-sm text-muted-foreground">Name</Label>
-                <p className="text-lg font-semibold">{currentUser?.name}</p>
-              </div>
-              <div>
-                <Label className="text-sm text-muted-foreground">Email</Label>
-                <p className="text-lg">{currentUser?.email}</p>
-              </div>
-              <div>
-                <Label className="text-sm text-muted-foreground">Organization</Label>
-                <p className="text-lg">{currentUser?.organizationName || 'N/A'}</p>
-              </div>
-              <Button
-                onClick={() => setChangePasswordOpen(true)}
-                variant="outline"
-                className="mt-4"
-              >
-                <Lock className="w-4 h-4 mr-2" />
-                Change Password
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {stats.map((stat) => (
@@ -418,60 +373,112 @@ export default function PublisherDashboard() {
         ))}
       </div>
 
-      <Card className="shadow-soft">
-        <CardHeader>
-          <CardTitle>Your Books</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <p className="text-muted-foreground">Loading books...</p>
-          ) : myBooks.length === 0 ? (
-            <div className="text-center text-muted-foreground py-12">
-              You have not published any books yet. Start by adding your first book.
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {myBooks.map((book) => (
-                <Card key={book.id} className="border shadow-sm flex flex-col">
-                  {book.coverImage ? (
-                    <img
-                      src={book.coverImage}
-                      alt={book.title}
-                      className="h-48 w-full object-cover rounded-t-xl"
-                    />
-                  ) : (
-                    <div className="h-48 w-full bg-muted flex items-center justify-center rounded-t-xl">
-                      <ImageIcon className="w-6 h-6 text-muted-foreground" />
-                    </div>
-                  )}
-                  <CardContent className="flex flex-col gap-3 py-4 flex-1">
-                    <div>
-                      <h3 className="text-xl font-semibold text-foreground">{book.title}</h3>
-                      <p className="text-sm text-muted-foreground">{book.author}</p>
-                    </div>
-                    <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
-                      <Badge variant="outline">Grade {book.grade}</Badge>
-                      <Badge variant="outline">{book.subject}</Badge>
-                      <Badge variant="secondary">NPR {book.price.toFixed(2)}</Badge>
-                    </div>
-                    {book.description && <p className="text-sm text-muted-foreground line-clamp-2">{book.description}</p>}
-                    <div className="mt-auto flex gap-2">
-                      <Button variant="outline" size="sm" className="flex-1" onClick={() => openDialog(book)}>
-                        <FilePenLine className="w-4 h-4 mr-2" />
-                        Edit
-                      </Button>
-                      <Button variant="destructive" size="sm" className="flex-1" onClick={() => handleDelete(book.id)}>
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Delete
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Analytics Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Monthly Sales Trend */}
+        <Card className="shadow-soft">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5" />
+              Monthly Sales Trend
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loadingOrders ? (
+              <div className="h-80 flex items-center justify-center text-muted-foreground">
+                Loading chart data...
+              </div>
+            ) : monthlySalesData.length === 0 ? (
+              <div className="h-80 flex items-center justify-center text-muted-foreground">
+                No sales data available yet
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={320}>
+                <LineChart data={monthlySalesData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={2} name="Revenue (NPR)" />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Revenue Breakdown */}
+        <Card className="shadow-soft">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Percent className="w-5 h-5" />
+              Revenue Breakdown
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loadingOrders || revenueBreakdownData.length === 0 ? (
+              <div className="h-80 flex items-center justify-center text-muted-foreground">
+                {loadingOrders ? 'Loading chart data...' : 'No revenue data available yet'}
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={320}>
+                <PieChart>
+                  <Pie
+                    data={revenueBreakdownData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={100}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {revenueBreakdownData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Top Performing Books */}
+        <Card className="shadow-soft lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BookOpen className="w-5 h-5" />
+              Top Performing Books
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loadingOrders ? (
+              <div className="h-80 flex items-center justify-center text-muted-foreground">
+                Loading chart data...
+              </div>
+            ) : topBooksData.length === 0 ? (
+              <div className="h-80 flex items-center justify-center text-muted-foreground">
+                No book sales data available yet
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={320}>
+                <BarChart data={topBooksData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis yAxisId="left" orientation="left" stroke="#3b82f6" />
+                  <YAxis yAxisId="right" orientation="right" stroke="#10b981" />
+                  <Tooltip />
+                  <Legend />
+                  <Bar yAxisId="left" dataKey="sold" fill="#3b82f6" name="Units Sold" />
+                  <Bar yAxisId="right" dataKey="revenue" fill="#10b981" name="Revenue (NPR)" />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       <Dialog
         open={dialogOpen}
@@ -555,69 +562,6 @@ export default function PublisherDashboard() {
               </Button>
             </div>
           </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Change Password Dialog */}
-      <Dialog open={changePasswordOpen} onOpenChange={setChangePasswordOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Change Password</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="currentPassword">Current Password</Label>
-              <Input
-                id="currentPassword"
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                placeholder="Enter current password"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="newPassword">New Password</Label>
-              <Input
-                id="newPassword"
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Enter new password"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirmNewPassword">Confirm New Password</Label>
-              <Input
-                id="confirmNewPassword"
-                type="password"
-                value={confirmNewPassword}
-                onChange={(e) => setConfirmNewPassword(e.target.value)}
-                placeholder="Confirm new password"
-              />
-            </div>
-            <div className="flex gap-3 pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="flex-1"
-                onClick={() => {
-                  setChangePasswordOpen(false);
-                  setCurrentPassword('');
-                  setNewPassword('');
-                  setConfirmNewPassword('');
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleChangePassword}
-                className="flex-1"
-                disabled={changingPassword}
-              >
-                {changingPassword ? 'Changing...' : 'Change Password'}
-              </Button>
-            </div>
-          </div>
         </DialogContent>
       </Dialog>
     </div>

@@ -1,7 +1,7 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Building, BookOpen, GraduationCap } from 'lucide-react';
+import { Building, BookOpen } from 'lucide-react';
 
 export default function RoleSelection() {
   const navigate = useNavigate();
@@ -24,8 +24,24 @@ export default function RoleSelection() {
   ];
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-light via-background to-accent-light p-4">
-      <div className="w-full max-w-4xl space-y-8">
+    <div className="min-h-screen bg-gradient-to-br from-primary-light via-background to-accent-light">
+      {/* Navigation Bar */}
+      <nav className="w-full border-b border-border bg-card/50 backdrop-blur-sm">
+        <div className="container mx-auto px-4 md:px-20 py-4">
+          <div className="flex items-center justify-between">
+            <Link to="/" className="flex items-center gap-2">
+              <img src="/logo.jpeg" alt="EduConnect Logo" className="w-10 h-10 rounded-lg object-cover" />
+              <span className="text-xl font-bold text-foreground">EduConnect</span>
+            </Link>
+            <Link to="/">
+              <Button variant="ghost">Back to Home</Button>
+            </Link>
+          </div>
+        </div>
+      </nav>
+
+      <div className="flex items-center justify-center p-4 min-h-[calc(100vh-80px)]">
+        <div className="w-full max-w-4xl space-y-8">
         <div className="text-center space-y-4">
           <div className="mx-auto w-20 h-20 rounded-full flex items-center justify-center overflow-hidden">
             <img src="/logo.jpeg" alt="EduConnect Logo" className="w-full h-full object-cover" />
@@ -66,6 +82,7 @@ export default function RoleSelection() {
             Already have an account? Sign in
           </Button>
         </div>
+      </div>
       </div>
     </div>
   );

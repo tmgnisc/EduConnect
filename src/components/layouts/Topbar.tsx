@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Bell, LogOut, User as UserIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -45,6 +45,9 @@ export const Topbar = () => {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="flex items-center gap-2">
               <Avatar className="w-8 h-8">
+                {user?.profileImage && (
+                  <AvatarImage src={user.profileImage} alt={user.name} />
+                )}
                 <AvatarFallback className="bg-primary text-primary-foreground">
                   {initials}
                 </AvatarFallback>

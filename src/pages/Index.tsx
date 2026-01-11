@@ -14,7 +14,8 @@ import {
   Building2,
   Star,
   Menu,
-  X
+  X,
+  User as UserIcon
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { booksApi, usersApi } from '@/services/api';
@@ -292,7 +293,7 @@ const Index = () => {
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {books.slice(0, 6).map((book) => (
-                  <Card key={book.id} className="border-border hover:shadow-lg transition-all duration-300 hover:scale-105 flex flex-col h-full">
+                  <Card key={book.id} className="border-border hover:shadow-xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-2 flex flex-col h-full group">
                     {book.coverImage ? (
                       <div className="relative h-64 w-full overflow-hidden rounded-t-xl">
                         <img
@@ -334,11 +335,11 @@ const Index = () => {
                         <span className="text-2xl font-bold text-foreground">
                           NPR {book.price}
                         </span>
-                        <Link to="/login">
-                          <Button size="sm" variant="outline">
-                            View Details
-                          </Button>
-                        </Link>
+                            <Link to="/login">
+                              <Button size="sm" variant="outline" className="group-hover:bg-primary group-hover:text-white transition-all duration-200">
+                                View Details
+                              </Button>
+                            </Link>
                       </div>
                     </CardContent>
                   </Card>
@@ -350,7 +351,7 @@ const Index = () => {
           {!loadingBooks && books.length > 0 && (
             <div className="text-center mt-12">
               <Link to="/login">
-                <Button variant="outline" size="lg" className="text-base px-8">
+                <Button variant="outline" size="lg" className="text-base px-8 hover:scale-105 transition-transform duration-200">
                   View All Books
                   <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
@@ -384,11 +385,19 @@ const Index = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
               {publishers.map((publisher) => (
-                <Card key={publisher.id} className="border-border hover:shadow-lg transition-all duration-300 hover:scale-105">
+                <Card key={publisher.id} className="border-border hover:shadow-xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-2 group">
                   <CardHeader>
                     <div className="flex items-start gap-4">
-                      <div className="w-16 h-16 bg-gradient-primary rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Building2 className="w-8 h-8 text-white" />
+                      <div className="w-16 h-16 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden bg-gradient-primary">
+                        {publisher.profileImage ? (
+                          <img 
+                            src={publisher.profileImage} 
+                            alt={publisher.organizationName || publisher.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <UserIcon className="w-8 h-8 text-white" />
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <CardTitle className="text-xl mb-1 line-clamp-1">
@@ -420,7 +429,7 @@ const Index = () => {
           {!loadingPublishers && publishers.length > 0 && (
             <div className="text-center mt-12">
               <Link to="/register">
-                <Button size="lg" className="text-base px-8">
+                <Button size="lg" className="text-base px-8 hover:scale-105 transition-transform duration-200">
                   Become a Publisher
                   <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
@@ -446,12 +455,12 @@ const Index = () => {
             {features.map((feature, index) => {
               const Icon = feature.icon;
               return (
-                <Card key={index} className="border-border hover:shadow-medium transition-shadow">
+                <Card key={index} className="border-border hover:shadow-xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 group">
                   <CardHeader>
-                    <div className="w-12 h-12 bg-gradient-primary rounded-lg flex items-center justify-center mb-4">
+                    <div className="w-12 h-12 bg-gradient-primary rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
                       <Icon className="w-6 h-6 text-white" />
                     </div>
-                    <CardTitle className="text-xl">{feature.title}</CardTitle>
+                    <CardTitle className="text-xl group-hover:text-primary transition-colors">{feature.title}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <CardDescription className="text-base">
@@ -479,7 +488,7 @@ const Index = () => {
               </p>
               <ul className="space-y-4">
                 {benefits.map((benefit, index) => (
-                  <li key={index} className="flex items-start gap-3">
+                  <li key={index} className="flex items-start gap-3 hover:translate-x-2 transition-transform duration-200">
                     <CheckCircle2 className="w-6 h-6 text-primary flex-shrink-0 mt-0.5" />
                     <span className="text-base text-foreground">{benefit}</span>
                   </li>
@@ -487,35 +496,52 @@ const Index = () => {
               </ul>
               <div className="mt-8">
                 <Link to="/register">
-                  <Button size="lg" className="w-full sm:w-auto">
+                  <Button size="lg" className="w-full sm:w-auto hover:scale-105 transition-transform duration-200">
                     Get Started Today
                     <ArrowRight className="ml-2 w-5 h-5" />
                   </Button>
                 </Link>
               </div>
             </div>
+            <div className="relative rounded-2xl overflow-hidden shadow-large">
+              <img 
+                src="https://plus.unsplash.com/premium_photo-1750530064487-9f357338dd90?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+                alt="Why Choose EduConnect"
+                className="w-full h-96 object-cover"
+              />
+            </div>
             <div className="relative">
-              <div className="bg-gradient-hero rounded-2xl p-8 md:p-12 text-white space-y-6 shadow-large">
-                <div className="flex items-center gap-3">
-                  <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                    <BookOpen className="w-8 h-8" />
+              <div 
+                className="relative rounded-2xl p-8 md:p-12 text-white space-y-6 shadow-large overflow-hidden"
+                style={{
+                  backgroundImage: "url('https://plus.unsplash.com/premium_photo-1664300897489-fd98eee64faf?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')",
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/90 to-primary/70 z-0"></div>
+                <div className="relative z-10">
+                  <div className="flex items-center gap-3">
+                    <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                      <BookOpen className="w-8 h-8" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold">Join EduConnect</h3>
+                      <p className="text-white/90">Start your journey today</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-2xl font-bold">Join EduConnect</h3>
-                    <p className="text-white/90">Start your journey today</p>
+                  <p className="text-lg text-white/90">
+                    Whether you're a school administrator, publisher, or educator, 
+                    EduConnect provides the tools you need to succeed in modern education.
+                  </p>
+                  <div className="pt-4">
+                    <Link to="/register">
+                      <Button size="lg" variant="secondary" className="w-full hover:scale-105 transition-transform duration-200">
+                        Create Your Account
+                        <ArrowRight className="ml-2 w-5 h-5" />
+                      </Button>
+                    </Link>
                   </div>
-                </div>
-                <p className="text-lg text-white/90">
-                  Whether you're a school administrator, publisher, or educator, 
-                  EduConnect provides the tools you need to succeed in modern education.
-                </p>
-                <div className="pt-4">
-                  <Link to="/register">
-                    <Button size="lg" variant="secondary" className="w-full">
-                      Create Your Account
-                      <ArrowRight className="ml-2 w-5 h-5" />
-                    </Button>
-                  </Link>
                 </div>
               </div>
             </div>
@@ -524,23 +550,32 @@ const Index = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="w-full py-16 md:py-24 px-4 md:px-20 bg-primary-light">
-        <div className="container mx-auto max-w-4xl text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+      <section 
+        className="relative w-full py-16 md:py-24 px-4 md:px-20 overflow-hidden"
+        style={{
+          backgroundImage: "url('https://plus.unsplash.com/premium_photo-1664300897489-fd98eee64faf?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')",
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundAttachment: 'fixed',
+        }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/95 to-primary/85 z-0"></div>
+        <div className="container mx-auto max-w-4xl text-center relative z-10">
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
             Ready to Transform Your Education Experience?
           </h2>
-          <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
+          <p className="text-lg text-white/90 mb-8 max-w-2xl mx-auto">
             Join EduConnect today and discover how we can help you achieve your educational goals.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link to="/register">
-              <Button size="lg" variant="default" className="w-full sm:w-auto text-base px-8">
+              <Button size="lg" variant="secondary" className="w-full sm:w-auto text-base px-8 hover:scale-105 transition-transform duration-200">
                 Start Free Trial
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </Link>
             <Link to="/login">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto text-base px-8">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto text-base px-8 bg-white/10 backdrop-blur-sm text-white border-white/30 hover:bg-white/20 hover:scale-105 transition-all duration-200">
                 Sign In to Existing Account
               </Button>
             </Link>

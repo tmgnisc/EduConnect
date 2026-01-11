@@ -46,8 +46,24 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-light via-background to-accent-light p-4">
-      <Card className="w-full max-w-md shadow-large">
+    <div className="min-h-screen bg-gradient-to-br from-primary-light via-background to-accent-light">
+      {/* Navigation Bar */}
+      <nav className="w-full border-b border-border bg-card/50 backdrop-blur-sm">
+        <div className="container mx-auto px-4 md:px-20 py-4">
+          <div className="flex items-center justify-between">
+            <Link to="/" className="flex items-center gap-2">
+              <img src="/logo.jpeg" alt="EduConnect Logo" className="w-10 h-10 rounded-lg object-cover" />
+              <span className="text-xl font-bold text-foreground">EduConnect</span>
+            </Link>
+            <Link to="/">
+              <Button variant="ghost">Back to Home</Button>
+            </Link>
+          </div>
+        </div>
+      </nav>
+
+      <div className="flex items-center justify-center p-4 min-h-[calc(100vh-80px)]">
+        <Card className="w-full max-w-md shadow-large">
         <CardHeader className="space-y-4 text-center">
           <div className="mx-auto w-16 h-16 rounded-full flex items-center justify-center overflow-hidden">
             <img src="/logo.jpeg" alt="EduConnect Logo" className="w-full h-full object-cover" />
@@ -109,6 +125,7 @@ export default function Login() {
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

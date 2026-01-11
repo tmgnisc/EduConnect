@@ -2,7 +2,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { publisherRegisterSchema } from '@/lib/validations';
 import { useAuthStore } from '@/store/authStore';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -58,8 +58,24 @@ export default function PublisherRegister() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-light via-background to-accent-light p-4">
-      <Card className="w-full max-w-2xl shadow-large">
+    <div className="min-h-screen bg-gradient-to-br from-primary-light via-background to-accent-light">
+      {/* Navigation Bar */}
+      <nav className="w-full border-b border-border bg-card/50 backdrop-blur-sm">
+        <div className="container mx-auto px-4 md:px-20 py-4">
+          <div className="flex items-center justify-between">
+            <Link to="/" className="flex items-center gap-2">
+              <img src="/logo.jpeg" alt="EduConnect Logo" className="w-10 h-10 rounded-lg object-cover" />
+              <span className="text-xl font-bold text-foreground">EduConnect</span>
+            </Link>
+            <Link to="/">
+              <Button variant="ghost">Back to Home</Button>
+            </Link>
+          </div>
+        </div>
+      </nav>
+
+      <div className="flex items-center justify-center p-4 min-h-[calc(100vh-80px)]">
+        <Card className="w-full max-w-2xl shadow-large">
         <CardHeader className="space-y-4 text-center">
           <div className="mx-auto w-16 h-16 bg-primary-light rounded-full flex items-center justify-center">
             <BookOpen className="w-8 h-8 text-primary" />
@@ -207,6 +223,7 @@ export default function PublisherRegister() {
           </form>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

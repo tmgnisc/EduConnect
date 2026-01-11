@@ -1,13 +1,75 @@
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Settings as SettingsIcon, User, Lock, Bell, Shield } from 'lucide-react';
+import { Settings as SettingsIcon, User, Lock, Bell, Shield, Upload } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
+import { usersApi } from '@/services/api';
+import { toast } from 'sonner';
 
 export default function Settings() {
   const { user } = useAuthStore();
+  const setUser = useAuthStore((state) => state.setUser);
+  
+  const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
+
+  const handleProfileImageUpload = async () => {
+    if (!profileImageFile) {
+      toast.error('Please select an image');
+      return;
+    }
+
+    try {
+      setUploadingImage(true);
+      const response = await usersApi.uploadProfileImage(profileImageFile);
+      if (response.data && user) {
+        setUser({ ...user, profileImage: response.data.profileImage });
+        toast.success('Profile image updated successfully');
+        setProfileImageFile(null);
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to upload image');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast.error('All password fields are required');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error('New passwords do not match');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error('New password must be at least 6 characters');
+      return;
+    }
+
+    try {
+      setChangingPassword(true);
+      await usersApi.changePassword(currentPassword, newPassword);
+      toast.success('Password changed successfully');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to change password');
+    } finally {
+      setChangingPassword(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -30,20 +92,60 @@ export default function Settings() {
                 Update your personal information
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
+              <div className="flex flex-col items-center gap-4">
+                <div className="w-32 h-32 rounded-full overflow-hidden bg-muted flex items-center justify-center">
+                  {user?.profileImage ? (
+                    <img
+                      src={user.profileImage}
+                      alt={user.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <User className="w-16 h-16 text-muted-foreground" />
+                  )}
+                </div>
+                <div className="space-y-2 w-full max-w-sm">
+                  <Label htmlFor="profileImage">Upload Profile Image</Label>
+                  <Input
+                    id="profileImage"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setProfileImageFile(e.target.files?.[0] || null)}
+                    disabled={uploadingImage}
+                  />
+                  {profileImageFile && (
+                    <Button
+                      onClick={handleProfileImageUpload}
+                      disabled={uploadingImage}
+                      size="sm"
+                      className="w-full"
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      {uploadingImage ? 'Uploading...' : 'Upload'}
+                    </Button>
+                  )}
+                </div>
+              </div>
+              <Separator />
               <div className="space-y-2">
                 <Label htmlFor="name">Full Name</Label>
-                <Input id="name" defaultValue={user?.name || ''} />
+                <Input id="name" defaultValue={user?.name || ''} disabled />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input id="email" type="email" defaultValue={user?.email || ''} disabled />
               </div>
+              {user?.organizationName && (
+                <div className="space-y-2">
+                  <Label htmlFor="organization">Organization</Label>
+                  <Input id="organization" defaultValue={user?.organizationName || ''} disabled />
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="role">Role</Label>
                 <Input id="role" defaultValue={user?.role || ''} disabled />
               </div>
-              <Button>Save Changes</Button>
             </CardContent>
           </Card>
 
@@ -60,17 +162,37 @@ export default function Settings() {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="current-password">Current Password</Label>
-                <Input id="current-password" type="password" />
+                <Input
+                  id="current-password"
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Enter current password"
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="new-password">New Password</Label>
-                <Input id="new-password" type="password" />
+                <Input
+                  id="new-password"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password"
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="confirm-password">Confirm New Password</Label>
-                <Input id="confirm-password" type="password" />
+                <Input
+                  id="confirm-password"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm new password"
+                />
               </div>
-              <Button>Update Password</Button>
+              <Button onClick={handleChangePassword} disabled={changingPassword}>
+                {changingPassword ? 'Updating...' : 'Update Password'}
+              </Button>
             </CardContent>
           </Card>
 
