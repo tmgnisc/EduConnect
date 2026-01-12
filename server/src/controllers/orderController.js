@@ -8,6 +8,7 @@ const {
 const { sendOrderConfirmationEmail, sendNewOrderNotificationToPublisher, sendOrderStatusUpdateEmail } = require('../services/emailService');
 const { findUserById } = require('../services/userService');
 const { getBookById } = require('../services/bookService');
+const { notifyNewOrder, notifyOrderStatusChange } = require('../services/notificationService');
 
 const listOrders = async (req, res, next) => {
   try {
@@ -82,6 +83,14 @@ const createNewOrder = async (req, res, next) => {
           schoolName: school.organizationName || school.name,
           items: publisherItems,
         });
+        
+        // Create notification for publisher
+        await notifyNewOrder(
+          publisherId,
+          order.id,
+          school.organizationName || school.name,
+          order.total
+        );
       }
     }
 
@@ -96,7 +105,7 @@ const changeOrderStatus = async (req, res, next) => {
     const { status, paymentStatus } = req.body;
     const order = await updateOrderStatus(req.params.id, status, paymentStatus);
     
-    // Send status update email to school
+    // Send status update email to school and create notification
     if (order && order.schoolId && status) {
       const school = await findUserById(order.schoolId);
       if (school) {
@@ -106,6 +115,9 @@ const changeOrderStatus = async (req, res, next) => {
           orderId: order.id,
           status: status,
         });
+        
+        // Create notification for school
+        await notifyOrderStatusChange(order.schoolId, order.id, status);
       }
     }
     

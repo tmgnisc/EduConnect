@@ -1,5 +1,6 @@
 const { createPaymentIntent } = require('../services/stripeService');
 const { generatePaymentUrl, verifyPayment } = require('../services/esewaService');
+const { notifyPaymentSuccess } = require('../services/notificationService');
 
 const createIntent = async (req, res, next) => {
   try {
@@ -67,7 +68,12 @@ const handleEsewaSuccess = async (req, res, next) => {
 
     // Update order payment status
     const { updateOrderStatus } = require('../services/orderService');
-    await updateOrderStatus(orderId, 'confirmed', 'completed');
+    const order = await updateOrderStatus(orderId, 'confirmed', 'completed');
+    
+    // Create notification for payment success
+    if (userId && order) {
+      await notifyPaymentSuccess(userId, orderId, order.total);
+    }
 
     const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/school/orders?payment=success&orderId=${orderId}`;
     res.redirect(redirectUrl);

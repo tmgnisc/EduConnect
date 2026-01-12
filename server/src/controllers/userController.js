@@ -1,6 +1,7 @@
 const { getAllUsers, updateUserStatus, getPublishers, updateProfileImage, updatePassword } = require('../services/userService');
 const { uploadImage } = require('../services/cloudinaryService');
 const { sendApprovalEmail, sendPasswordChangeConfirmation } = require('../services/emailService');
+const { notifyAccountApproval } = require('../services/notificationService');
 const bcrypt = require('bcryptjs');
 
 const listUsers = async (req, res, next) => {
@@ -17,13 +18,16 @@ const changeUserStatus = async (req, res, next) => {
     const { status } = req.body;
     const user = await updateUserStatus(req.params.id, status);
     
-    // Send email notification
+    // Send email notification and create in-app notification
     if (user) {
       sendApprovalEmail({
         to: user.email,
         name: user.name,
         status: status,
       });
+      
+      // Create notification for user
+      await notifyAccountApproval(user.id, status);
     }
     
     res.json({ data: user });
