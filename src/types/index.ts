@@ -110,3 +110,14 @@ export interface FeedbackEntry {
   message: string;
   createdAt: string;
 }
+
+export interface Notification {
+  id: string;
+  userId: string;
+  type: 'order' | 'approval' | 'status_change' | 'payment' | 'general';
+  title: string;
+  message: string;
+  isRead: boolean;
+  link?: string;
+  createdAt: string;
+}

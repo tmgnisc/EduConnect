@@ -110,7 +110,11 @@ export default function SchoolBooks() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredBooks.map((book) => (
-                <Card key={book.id} className="shadow-soft hover:shadow-medium transition-all duration-300 flex flex-col">
+                <Card 
+                  key={book.id} 
+                  className="shadow-soft hover:shadow-medium transition-all duration-300 flex flex-col cursor-pointer"
+                  onClick={() => handleViewDetails(book)}
+                >
                   {book.coverImage ? (
                     <img
                       src={book.coverImage}
@@ -156,7 +160,10 @@ export default function SchoolBooks() {
                           size="sm"
                           variant="outline"
                           className="flex-1"
-                          onClick={() => handleViewDetails(book)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewDetails(book);
+                          }}
                         >
                           <Eye className="w-4 h-4 mr-2" />
                           Details
@@ -164,7 +171,10 @@ export default function SchoolBooks() {
                         <Button
                           size="sm"
                           className="flex-1"
-                          onClick={() => handleAddToCart(book)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAddToCart(book);
+                          }}
                         >
                           <ShoppingCart className="w-4 h-4 mr-2" />
                           Add to Cart

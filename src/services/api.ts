@@ -221,4 +221,31 @@ export const activitiesApi = {
   },
 };
 
+export const notificationsApi = {
+  getAll: async (limit?: number) => {
+    const response = await apiClient.get('/notifications', { params: { limit } });
+    return response.data;
+  },
+  
+  getUnreadCount: async () => {
+    const response = await apiClient.get('/notifications/unread-count');
+    return response.data;
+  },
+  
+  markAsRead: async (id: string) => {
+    const response = await apiClient.patch(`/notifications/${id}/read`);
+    return response.data;
+  },
+  
+  markAllAsRead: async () => {
+    const response = await apiClient.patch('/notifications/read-all');
+    return response.data;
+  },
+  
+  delete: async (id: string) => {
+    const response = await apiClient.delete(`/notifications/${id}`);
+    return response.data;
+  },
+};
+
 export default apiClient;

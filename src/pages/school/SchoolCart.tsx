@@ -167,8 +167,16 @@ export default function SchoolCart() {
                 <CardContent className="p-4">
                   <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                     <div className="flex items-center gap-4 flex-1">
-                      <div className="w-16 h-20 bg-gradient-primary rounded-lg flex items-center justify-center flex-shrink-0">
-                        <ShoppingCart className="w-8 h-8 text-white" />
+                      <div className="w-20 h-28 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden bg-gradient-primary">
+                        {item.coverImage ? (
+                          <img 
+                            src={item.coverImage} 
+                            alt={item.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <ShoppingCart className="w-8 h-8 text-white" />
+                        )}
                       </div>
                       <div>
                         <p className="font-medium text-foreground text-lg">{item.title}</p>

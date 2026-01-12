@@ -19,7 +19,7 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { booksApi, usersApi } from '@/services/api';
 import { Book, User } from '@/types';
 
@@ -73,6 +73,25 @@ const Index = () => {
 
     fetchData();
   }, []);
+
+  // Sort publishers by number of books (descending)
+  const sortedPublishers = useMemo(() => {
+    if (!publishers.length || !books.length) return publishers;
+
+    // Count books per publisher
+    const bookCountMap = books.reduce((acc, book) => {
+      const publisherId = book.publisherId;
+      acc[publisherId] = (acc[publisherId] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Sort publishers by book count
+    return [...publishers].sort((a, b) => {
+      const countA = bookCountMap[a.id] || 0;
+      const countB = bookCountMap[b.id] || 0;
+      return countB - countA; // Descending order
+    });
+  }, [publishers, books]);
 
   const features = [
     {
@@ -327,56 +346,56 @@ const Index = () => {
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {books.slice(0, 6).map((book) => (
-                  <Card key={book.id} className="border-border hover:shadow-xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-2 flex flex-col h-full group">
-                    {book.coverImage ? (
-                      <div className="relative h-64 w-full overflow-hidden rounded-t-xl">
-                        <img
-                          src={book.coverImage}
-                          alt={book.title}
-                          className="h-full w-full object-cover"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-                      </div>
-                    ) : (
-                      <div className="h-64 w-full bg-gradient-primary rounded-t-xl flex items-center justify-center">
-                        <BookOpen className="w-16 h-16 text-white" />
-                      </div>
-                    )}
-                    <CardHeader>
-                      <CardTitle className="text-xl line-clamp-2">{book.title}</CardTitle>
-                      <CardDescription className="text-sm mt-1">by {book.author}</CardDescription>
-                      <div className="flex items-center gap-2 mt-3 flex-wrap">
-                        <Badge variant="outline" className="text-xs">
-                          {book.grade}
-                        </Badge>
-                        <Badge variant="outline" className="text-xs">
-                          {book.subject}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="flex-1 flex flex-col justify-between">
-                      <div>
-                        <p className="text-sm text-muted-foreground mb-2 font-medium">
-                          {book.publisherName}
-                        </p>
-                        {book.description && (
-                          <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-                            {book.description}
+                  <Link key={book.id} to="/login">
+                    <Card className="border-border hover:shadow-xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-2 flex flex-col h-full group cursor-pointer">
+                      {book.coverImage ? (
+                        <div className="relative h-64 w-full overflow-hidden rounded-t-xl">
+                          <img
+                            src={book.coverImage}
+                            alt={book.title}
+                            className="h-full w-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                        </div>
+                      ) : (
+                        <div className="h-64 w-full bg-gradient-primary rounded-t-xl flex items-center justify-center">
+                          <BookOpen className="w-16 h-16 text-white" />
+                        </div>
+                      )}
+                      <CardHeader>
+                        <CardTitle className="text-xl line-clamp-2">{book.title}</CardTitle>
+                        <CardDescription className="text-sm mt-1">by {book.author}</CardDescription>
+                        <div className="flex items-center gap-2 mt-3 flex-wrap">
+                          <Badge variant="outline" className="text-xs">
+                            {book.grade}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs">
+                            {book.subject}
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="flex-1 flex flex-col justify-between">
+                        <div>
+                          <p className="text-sm text-muted-foreground mb-2 font-medium">
+                            {book.publisherName}
                           </p>
-                        )}
-                      </div>
-                      <div className="flex items-center justify-between pt-4 border-t">
-                        <span className="text-2xl font-bold text-foreground">
-                          NPR {book.price}
-                        </span>
-                            <Link to="/login">
-                              <Button size="sm" variant="outline" className="group-hover:bg-primary group-hover:text-white transition-all duration-200">
-                                View Details
-                              </Button>
-                            </Link>
-                      </div>
-                    </CardContent>
-                  </Card>
+                          {book.description && (
+                            <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+                              {book.description}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between pt-4 border-t">
+                          <span className="text-2xl font-bold text-foreground">
+                            NPR {book.price}
+                          </span>
+                          <Button size="sm" variant="outline" className="group-hover:bg-primary group-hover:text-white transition-all duration-200">
+                            View Details
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
                 ))}
               </div>
             </>
@@ -411,14 +430,16 @@ const Index = () => {
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
-          ) : publishers.length === 0 ? (
+          ) : sortedPublishers.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Building2 className="w-16 h-16 mx-auto mb-4 opacity-50" />
               <p className="text-lg">No publishers available at the moment.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-              {publishers.map((publisher) => (
+              {sortedPublishers.map((publisher) => {
+                const bookCount = books.filter(book => book.publisherId === publisher.id).length;
+                return (
                 <Card key={publisher.id} className="border-border hover:shadow-xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-2 group">
                   <CardHeader>
                     <div className="flex items-start gap-4">
@@ -444,19 +465,28 @@ const Index = () => {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex items-center justify-between">
-                      <Badge variant="secondary" className="text-xs">
-                        <CheckCircle2 className="w-3 h-3 mr-1" />
-                        Verified Publisher
-                      </Badge>
-                      <div className="flex items-center gap-1 text-yellow-500">
-                        <Star className="w-4 h-4 fill-current" />
-                        <span className="text-sm font-medium">4.8</span>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Badge variant="secondary" className="text-xs">
+                          <CheckCircle2 className="w-3 h-3 mr-1" />
+                          Verified Publisher
+                        </Badge>
+                        <div className="flex items-center gap-1 text-yellow-500">
+                          <Star className="w-4 h-4 fill-current" />
+                          <span className="text-sm font-medium">4.8</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <BookOpen className="w-4 h-4" />
+                        <span className="text-sm font-medium">
+                          {bookCount} {bookCount === 1 ? 'Book' : 'Books'} Available
+                        </span>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+              );
+              })}
             </div>
           )}
 

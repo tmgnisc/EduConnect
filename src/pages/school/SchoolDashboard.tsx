@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { usersApi, booksApi, ordersApi } from '@/services/api';
 import { User, Book, Order } from '@/types';
 import { toast } from 'sonner';
@@ -19,6 +20,8 @@ export default function SchoolDashboard() {
   const [loadingBooks, setLoadingBooks] = useState(true);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
+  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   const fetchPublishers = async () => {
     try {
@@ -100,6 +103,11 @@ export default function SchoolDashboard() {
     ],
     [books.length, cartItems, loadingBooks, loadingPublishers, publishers.length]
   );
+
+  const handleViewDetails = (book: Book) => {
+    setSelectedBook(book);
+    setDetailsOpen(true);
+  };
 
   const handleAddToCart = (book: Book) => {
     addToCart(book);
@@ -210,7 +218,11 @@ export default function SchoolDashboard() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {selectedPublisherBooks.map((book) => (
-                  <Card key={book.id} className="border">
+                  <Card 
+                    key={book.id} 
+                    className="border cursor-pointer hover:shadow-lg transition-all duration-300"
+                    onClick={() => handleViewDetails(book)}
+                  >
                     {book.coverImage ? (
                       <img src={book.coverImage} alt={book.title} className="h-40 w-full object-cover rounded-t-xl" />
                     ) : (
@@ -231,7 +243,13 @@ export default function SchoolDashboard() {
                       {book.description && (
                         <p className="text-xs text-muted-foreground line-clamp-2">{book.description}</p>
                       )}
-                      <Button className="w-full" onClick={() => handleAddToCart(book)}>
+                      <Button 
+                        className="w-full" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAddToCart(book);
+                        }}
+                      >
                         Add to Cart
                       </Button>
                     </CardContent>
@@ -288,6 +306,64 @@ export default function SchoolDashboard() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Book Details</DialogTitle>
+            <DialogDescription>View complete information about this book</DialogDescription>
+          </DialogHeader>
+          {selectedBook && (
+            <div className="space-y-6">
+              {selectedBook.coverImage && (
+                <div className="w-full h-80 rounded-lg overflow-hidden">
+                  <img
+                    src={selectedBook.coverImage}
+                    alt={selectedBook.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-2xl font-bold text-foreground">{selectedBook.title}</h3>
+                  <p className="text-muted-foreground mt-1">by {selectedBook.author}</p>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant="outline">Grade {selectedBook.grade}</Badge>
+                  <Badge variant="outline">{selectedBook.subject}</Badge>
+                  <Badge variant="outline">ISBN: {selectedBook.isbn}</Badge>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Publisher</p>
+                  <p className="font-medium">{selectedBook.publisherName}</p>
+                </div>
+                {selectedBook.description && (
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Description</p>
+                    <p className="text-foreground leading-relaxed">{selectedBook.description}</p>
+                  </div>
+                )}
+                <div className="flex items-center justify-between pt-4 border-t">
+                  <span className="text-3xl font-bold text-primary">
+                    NPR {selectedBook.price.toFixed(2)}
+                  </span>
+                  <Button
+                    size="lg"
+                    onClick={() => {
+                      handleAddToCart(selectedBook);
+                      setDetailsOpen(false);
+                    }}
+                  >
+                    <ShoppingCart className="w-5 h-5 mr-2" />
+                    Add to Cart
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
