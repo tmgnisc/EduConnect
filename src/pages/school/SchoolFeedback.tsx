@@ -1,27 +1,71 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { feedbackApi, usersApi } from '@/services/api';
+import { feedbackApi, usersApi, ordersApi, booksApi } from '@/services/api';
 import { toast } from 'sonner';
-import { FeedbackEntry, User } from '@/types';
+import { FeedbackEntry, User, Order, Book } from '@/types';
 import { Loader2, Send, MessageCircle } from 'lucide-react';
 
 export default function SchoolFeedback() {
   const [publishers, setPublishers] = useState<User[]>([]);
   const [feedback, setFeedback] = useState<FeedbackEntry[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPublisherId, setSelectedPublisherId] = useState('');
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  // Get all purchased book IDs from orders
+  const purchasedBookIds = useMemo(() => {
+    const purchasedIds = new Set<string>();
+    orders.forEach((order) => {
+      if (order.items && order.items.length > 0) {
+        order.items.forEach((item) => {
+          purchasedIds.add(item.bookId);
+        });
+      }
+    });
+    return purchasedIds;
+  }, [orders]);
+
+  // Get publisher IDs from purchased books
+  const purchasedPublisherIds = useMemo(() => {
+    const publisherIds = new Set<string>();
+    books.forEach((book) => {
+      if (purchasedBookIds.has(book.id)) {
+        publisherIds.add(book.publisherId);
+      }
+    });
+    return publisherIds;
+  }, [books, purchasedBookIds]);
+
+  // Filter publishers to only show those from purchased books
+  const availablePublishers = useMemo(() => {
+    return publishers.filter((publisher) => 
+      publisher.status === 'approved' && purchasedPublisherIds.has(publisher.id)
+    );
+  }, [publishers, purchasedPublisherIds]);
+
+  // Filter feedback to only show feedback for purchased publishers
+  const filteredFeedback = useMemo(() => {
+    return feedback.filter((item) => purchasedPublisherIds.has(item.publisherId));
+  }, [feedback, purchasedPublisherIds]);
+
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [publisherRes, feedbackRes] = await Promise.all([usersApi.getPublishers(), feedbackApi.getAll()]);
-      const approvedPublishers = (publisherRes.data || []).filter((publisher) => publisher.status === 'approved');
-      setPublishers(approvedPublishers);
+      const [publisherRes, feedbackRes, ordersRes, booksRes] = await Promise.all([
+        usersApi.getPublishers(),
+        feedbackApi.getAll(),
+        ordersApi.getAll(),
+        booksApi.getAll(),
+      ]);
+      setPublishers(publisherRes.data || []);
       setFeedback(feedbackRes.data || []);
+      setOrders(ordersRes.data || []);
+      setBooks(booksRes.data || []);
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to load feedback');
     } finally {
@@ -39,7 +83,7 @@ export default function SchoolFeedback() {
       return;
     }
 
-    const publisher = publishers.find((p) => p.id === selectedPublisherId);
+    const publisher = availablePublishers.find((p) => p.id === selectedPublisherId);
     if (!publisher) {
       toast.error('Invalid publisher selected');
       return;
@@ -81,18 +125,24 @@ export default function SchoolFeedback() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">Select Publisher</label>
-            <select
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              value={selectedPublisherId}
-              onChange={(event) => setSelectedPublisherId(event.target.value)}
-            >
-              <option value="">Choose publisher</option>
-              {publishers.map((publisher) => (
-                <option key={publisher.id} value={publisher.id}>
-                  {publisher.organizationName || publisher.name}
-                </option>
-              ))}
-            </select>
+            {availablePublishers.length === 0 ? (
+              <div className="text-sm text-muted-foreground p-3 border rounded-md bg-muted/50">
+                You need to purchase books from publishers first before you can send feedback.
+              </div>
+            ) : (
+              <select
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={selectedPublisherId}
+                onChange={(event) => setSelectedPublisherId(event.target.value)}
+              >
+                <option value="">Choose publisher</option>
+                {availablePublishers.map((publisher) => (
+                  <option key={publisher.id} value={publisher.id}>
+                    {publisher.organizationName || publisher.name}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">Message</label>
@@ -120,11 +170,15 @@ export default function SchoolFeedback() {
               <Loader2 className="w-4 h-4 animate-spin" />
               Loading feedback...
             </div>
-          ) : feedback.length === 0 ? (
-            <div className="text-center text-muted-foreground py-8">No feedback submitted yet.</div>
+          ) : filteredFeedback.length === 0 ? (
+            <div className="text-center text-muted-foreground py-8">
+              {availablePublishers.length === 0 
+                ? 'You haven\'t purchased books from any publishers yet. Purchase books to send feedback.'
+                : 'No feedback submitted yet.'}
+            </div>
           ) : (
             <div className="space-y-4">
-              {feedback.map((item) => (
+              {filteredFeedback.map((item) => (
                 <div key={item.id} className="p-4 border rounded-xl">
                   <div className="flex items-center justify-between gap-2">
                     <p className="font-semibold text-foreground">{item.publisherName}</p>

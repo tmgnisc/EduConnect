@@ -7,7 +7,7 @@ import { usersApi, booksApi, ordersApi } from '@/services/api';
 import { User, Book, Order } from '@/types';
 import { toast } from 'sonner';
 import { useCartStore } from '@/store/cartStore';
-import { ShoppingCart, Users, BookOpen, LibraryBig, Loader2 } from 'lucide-react';
+import { ShoppingCart, Users, BookOpen, LibraryBig, Loader2, CheckCircle2 } from 'lucide-react';
 
 export default function SchoolDashboard() {
   const addToCart = useCartStore((state) => state.addItem);
@@ -22,6 +22,7 @@ export default function SchoolDashboard() {
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [bookView, setBookView] = useState<'all' | 'my'>('all');
 
   const fetchPublishers = async () => {
     try {
@@ -69,10 +70,35 @@ export default function SchoolDashboard() {
     fetchOrders();
   }, []);
 
+  // Get all purchased book IDs from orders
+  const purchasedBookIds = useMemo(() => {
+    const purchasedIds = new Set<string>();
+    orders.forEach((order) => {
+      if (order.items && order.items.length > 0) {
+        order.items.forEach((item) => {
+          purchasedIds.add(item.bookId);
+        });
+      }
+    });
+    return purchasedIds;
+  }, [orders]);
+
+  // Get all purchased books
+  const myBooks = useMemo(() => {
+    return books.filter((book) => purchasedBookIds.has(book.id));
+  }, [books, purchasedBookIds]);
+
   const selectedPublisherBooks = useMemo(() => {
     if (!selectedPublisherId) return [];
-    return books.filter((book) => book.publisherId === selectedPublisherId);
-  }, [books, selectedPublisherId]);
+    const filtered = books.filter((book) => book.publisherId === selectedPublisherId);
+    
+    // If viewing "My Books", only show purchased books from selected publisher
+    if (bookView === 'my') {
+      return filtered.filter((book) => purchasedBookIds.has(book.id));
+    }
+    
+    return filtered;
+  }, [books, selectedPublisherId, bookView, purchasedBookIds]);
 
   const stats = useMemo(
     () => [
@@ -110,6 +136,11 @@ export default function SchoolDashboard() {
   };
 
   const handleAddToCart = (book: Book) => {
+    // Check if book is already purchased
+    if (purchasedBookIds.has(book.id)) {
+      toast.error(`"${book.title}" is already in your library. You cannot purchase it again.`);
+      return;
+    }
     addToCart(book);
     toast.success(`Added "${book.title}" to cart`);
   };
@@ -189,17 +220,44 @@ export default function SchoolDashboard() {
 
         <Card className="shadow-soft">
           <CardHeader className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-            <div>
+            <div className="flex-1">
               <CardTitle>
-                {publishers.find((pub) => pub.id === selectedPublisherId)?.organizationName ||
-                  publishers.find((pub) => pub.id === selectedPublisherId)?.name ||
-                  'Select a publisher'}
+                {bookView === 'my' 
+                  ? 'My Books'
+                  : publishers.find((pub) => pub.id === selectedPublisherId)?.organizationName ||
+                    publishers.find((pub) => pub.id === selectedPublisherId)?.name ||
+                    'Select a publisher'}
               </CardTitle>
               <p className="text-sm text-muted-foreground">
-                {selectedPublisherId
+                {bookView === 'my'
+                  ? 'Books you have purchased are listed here.'
+                  : selectedPublisherId
                   ? 'Here are the books this publisher offers.'
                   : 'Choose a publisher to view their catalog.'}
               </p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant={bookView === 'all' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => {
+                  setBookView('all');
+                  if (!selectedPublisherId && publishers.length > 0) {
+                    setSelectedPublisherId(publishers[0].id);
+                  }
+                }}
+              >
+                <BookOpen className="w-4 h-4 mr-2" />
+                All Books
+              </Button>
+              <Button
+                variant={bookView === 'my' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setBookView('my')}
+              >
+                <LibraryBig className="w-4 h-4 mr-2" />
+                My Books ({myBooks.length})
+              </Button>
             </div>
           </CardHeader>
           <CardContent>
@@ -208,53 +266,146 @@ export default function SchoolDashboard() {
                 <Loader2 className="w-4 h-4 animate-spin" />
                 Loading books...
               </div>
+            ) : bookView === 'my' ? (
+              myBooks.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <LibraryBig className="w-10 h-10 mx-auto mb-3 opacity-50" />
+                  <p>You haven't purchased any books yet.</p>
+                  <p className="text-sm mt-1">Browse publishers and add books to your cart to get started.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {myBooks.map((book) => {
+                    const isPurchased = purchasedBookIds.has(book.id);
+                    return (
+                      <Card 
+                        key={book.id} 
+                        className="border cursor-pointer hover:shadow-lg transition-all duration-300"
+                        onClick={() => handleViewDetails(book)}
+                      >
+                        {book.coverImage ? (
+                          <img src={book.coverImage} alt={book.title} className="h-40 w-full object-cover rounded-t-xl" />
+                        ) : (
+                          <div className="h-40 w-full bg-muted flex items-center justify-center rounded-t-xl">
+                            <BookOpen className="w-6 h-6 text-muted-foreground" />
+                          </div>
+                        )}
+                        <CardContent className="space-y-3 py-4">
+                          <div>
+                            <h3 className="font-semibold text-foreground">{book.title}</h3>
+                            <p className="text-sm text-muted-foreground">{book.author}</p>
+                          </div>
+                          <div className="flex flex-wrap gap-2 text-xs">
+                            <Badge variant="outline">Grade {book.grade}</Badge>
+                            <Badge variant="outline">{book.subject}</Badge>
+                            {isPurchased && (
+                              <Badge className="bg-green-500 text-white">
+                                <CheckCircle2 className="w-3 h-3 mr-1" />
+                                Purchased
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-lg font-semibold text-primary">NPR {book.price.toFixed(2)}</p>
+                          {book.description && (
+                            <p className="text-xs text-muted-foreground line-clamp-2">{book.description}</p>
+                          )}
+                          <Button 
+                            className="w-full" 
+                            disabled={isPurchased}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAddToCart(book);
+                            }}
+                          >
+                            {isPurchased ? (
+                              <>
+                                <CheckCircle2 className="w-4 h-4 mr-2" />
+                                Already Purchased
+                              </>
+                            ) : (
+                              <>
+                                <ShoppingCart className="w-4 h-4 mr-2" />
+                                Add to Cart
+                              </>
+                            )}
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )
             ) : !selectedPublisherId ? (
               <div className="text-center py-12 text-muted-foreground">
                 <LibraryBig className="w-10 h-10 mx-auto mb-3" />
                 Select a publisher to explore their books.
               </div>
             ) : selectedPublisherBooks.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">This publisher hasn't added any books yet.</div>
+              <div className="text-center py-12 text-muted-foreground">
+                {bookView === 'my' 
+                  ? "You haven't purchased any books from this publisher yet."
+                  : "This publisher hasn't added any books yet."}
+              </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {selectedPublisherBooks.map((book) => (
-                  <Card 
-                    key={book.id} 
-                    className="border cursor-pointer hover:shadow-lg transition-all duration-300"
-                    onClick={() => handleViewDetails(book)}
-                  >
-                    {book.coverImage ? (
-                      <img src={book.coverImage} alt={book.title} className="h-40 w-full object-cover rounded-t-xl" />
-                    ) : (
-                      <div className="h-40 w-full bg-muted flex items-center justify-center rounded-t-xl">
-                        <BookOpen className="w-6 h-6 text-muted-foreground" />
-                      </div>
-                    )}
-                    <CardContent className="space-y-3 py-4">
-                      <div>
-                        <h3 className="font-semibold text-foreground">{book.title}</h3>
-                        <p className="text-sm text-muted-foreground">{book.author}</p>
-                      </div>
-                      <div className="flex flex-wrap gap-2 text-xs">
-                        <Badge variant="outline">Grade {book.grade}</Badge>
-                        <Badge variant="outline">{book.subject}</Badge>
-                      </div>
-                      <p className="text-lg font-semibold text-primary">NPR {book.price.toFixed(2)}</p>
-                      {book.description && (
-                        <p className="text-xs text-muted-foreground line-clamp-2">{book.description}</p>
+                {selectedPublisherBooks.map((book) => {
+                  const isPurchased = purchasedBookIds.has(book.id);
+                  return (
+                    <Card 
+                      key={book.id} 
+                      className="border cursor-pointer hover:shadow-lg transition-all duration-300"
+                      onClick={() => handleViewDetails(book)}
+                    >
+                      {book.coverImage ? (
+                        <img src={book.coverImage} alt={book.title} className="h-40 w-full object-cover rounded-t-xl" />
+                      ) : (
+                        <div className="h-40 w-full bg-muted flex items-center justify-center rounded-t-xl">
+                          <BookOpen className="w-6 h-6 text-muted-foreground" />
+                        </div>
                       )}
-                      <Button 
-                        className="w-full" 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleAddToCart(book);
-                        }}
-                      >
-                        Add to Cart
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
+                      <CardContent className="space-y-3 py-4">
+                        <div>
+                          <h3 className="font-semibold text-foreground">{book.title}</h3>
+                          <p className="text-sm text-muted-foreground">{book.author}</p>
+                        </div>
+                        <div className="flex flex-wrap gap-2 text-xs">
+                          <Badge variant="outline">Grade {book.grade}</Badge>
+                          <Badge variant="outline">{book.subject}</Badge>
+                          {isPurchased && (
+                            <Badge className="bg-green-500 text-white">
+                              <CheckCircle2 className="w-3 h-3 mr-1" />
+                              Purchased
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-lg font-semibold text-primary">NPR {book.price.toFixed(2)}</p>
+                        {book.description && (
+                          <p className="text-xs text-muted-foreground line-clamp-2">{book.description}</p>
+                        )}
+                        <Button 
+                          className="w-full" 
+                          disabled={isPurchased}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAddToCart(book);
+                          }}
+                        >
+                          {isPurchased ? (
+                            <>
+                              <CheckCircle2 className="w-4 h-4 mr-2" />
+                              Already Purchased
+                            </>
+                          ) : (
+                            <>
+                              <ShoppingCart className="w-4 h-4 mr-2" />
+                              Add to Cart
+                            </>
+                          )}
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </CardContent>
@@ -345,18 +496,36 @@ export default function SchoolDashboard() {
                   </div>
                 )}
                 <div className="flex items-center justify-between pt-4 border-t">
-                  <span className="text-3xl font-bold text-primary">
-                    NPR {selectedBook.price.toFixed(2)}
-                  </span>
+                  <div>
+                    <span className="text-3xl font-bold text-primary">
+                      NPR {selectedBook.price.toFixed(2)}
+                    </span>
+                    {purchasedBookIds.has(selectedBook.id) && (
+                      <Badge className="ml-3 bg-green-500 text-white">
+                        <CheckCircle2 className="w-3 h-3 mr-1" />
+                        Already Purchased
+                      </Badge>
+                    )}
+                  </div>
                   <Button
                     size="lg"
+                    disabled={purchasedBookIds.has(selectedBook.id)}
                     onClick={() => {
                       handleAddToCart(selectedBook);
                       setDetailsOpen(false);
                     }}
                   >
-                    <ShoppingCart className="w-5 h-5 mr-2" />
-                    Add to Cart
+                    {purchasedBookIds.has(selectedBook.id) ? (
+                      <>
+                        <CheckCircle2 className="w-5 h-5 mr-2" />
+                        Already Purchased
+                      </>
+                    ) : (
+                      <>
+                        <ShoppingCart className="w-5 h-5 mr-2" />
+                        Add to Cart
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>

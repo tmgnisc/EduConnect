@@ -25,6 +25,8 @@ const publisherLinks = [
   { to: '/publisher/orders', label: 'Orders', icon: ShoppingCart },
   { to: '/publisher/schools', label: 'Schools', icon: Users },
   { to: '/publisher/feedback', label: 'Feedback', icon: MessageSquare },
+  { to: '/publisher/progress', label: 'Progress', icon: CheckSquare },
+  { to: '/settings', label: 'Settings', icon: Settings },
 ];
 
 const schoolLinks = [
@@ -34,6 +36,7 @@ const schoolLinks = [
   { to: '/school/orders', label: 'My Orders', icon: FileText },
   { to: '/school/progress', label: 'Progress', icon: CheckSquare },
   { to: '/school/feedback', label: 'Feedback', icon: MessageSquare },
+  { to: '/settings', label: 'Settings', icon: Settings },
 ];
 
 export const Sidebar = () => {
@@ -76,21 +79,6 @@ export const Sidebar = () => {
           </NavLink>
         ))}
       </nav>
-
-      <div className="p-4 border-t border-sidebar-border">
-        <NavLink
-          to="/settings"
-          className={cn(
-            "flex items-center gap-3 px-4 py-3 rounded-lg text-sidebar-foreground",
-            "transition-all duration-200",
-            "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-          )}
-          activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
-        >
-          <Settings className="w-5 h-5" />
-          <span>Settings</span>
-        </NavLink>
-      </div>
     </aside>
   );
 };

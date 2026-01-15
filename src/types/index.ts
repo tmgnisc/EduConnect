@@ -93,6 +93,8 @@ export interface CartItem extends Book {
 
 export interface ProgressEntry {
   id: string;
+  schoolId?: string;
+  schoolName?: string;
   bookId: string;
   bookTitle: string;
   status: 'not-started' | 'in-progress' | 'completed';

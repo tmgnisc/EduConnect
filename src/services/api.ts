@@ -180,6 +180,10 @@ export const progressApi = {
     const response = await apiClient.get('/progress');
     return response.data;
   },
+  getByPublisher: async () => {
+    const response = await apiClient.get('/progress/publisher');
+    return response.data;
+  },
   create: async (data: { bookId: string; bookTitle: string; status: string; description?: string }) => {
     const response = await apiClient.post('/progress', data);
     return response.data;

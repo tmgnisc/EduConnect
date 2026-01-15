@@ -29,6 +29,7 @@ import PublisherBooks from "./pages/publisher/PublisherBooks";
 import PublisherOrders from "./pages/publisher/PublisherOrders";
 import PublisherSchools from "./pages/publisher/PublisherSchools.tsx";
 import PublisherFeedback from "./pages/publisher/PublisherFeedback.tsx";
+import PublisherProgress from "./pages/publisher/PublisherProgress";
 
 // School Pages
 import SchoolDashboard from "./pages/school/SchoolDashboard";
@@ -90,6 +91,7 @@ const App = () => {
               <Route path="orders" element={<PublisherOrders />} />
               <Route path="schools" element={<PublisherSchools />} />
               <Route path="feedback" element={<PublisherFeedback />} />
+              <Route path="progress" element={<PublisherProgress />} />
             </Route>
 
             {/* School Routes */}

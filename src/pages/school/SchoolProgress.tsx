@@ -4,8 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { progressApi, booksApi } from '@/services/api';
-import { ProgressEntry, Book } from '@/types';
+import { progressApi, booksApi, ordersApi } from '@/services/api';
+import { ProgressEntry, Book, Order } from '@/types';
 import { toast } from 'sonner';
 import { CheckSquare, BookOpen, TrendingUp, Loader2, PencilLine, Trash2, Plus } from 'lucide-react';
 
@@ -18,6 +18,7 @@ const statusOptions: { value: ProgressEntry['status']; label: string }[] = [
 export default function SchoolProgress() {
   const [entries, setEntries] = useState<ProgressEntry[]>([]);
   const [books, setBooks] = useState<Book[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<ProgressEntry | null>(null);
@@ -27,12 +28,43 @@ export default function SchoolProgress() {
     description: '',
   });
 
+  // Get all purchased book IDs from orders
+  const purchasedBookIds = useMemo(() => {
+    const purchasedIds = new Set<string>();
+    orders.forEach((order) => {
+      if (order.items && order.items.length > 0) {
+        order.items.forEach((item) => {
+          purchasedIds.add(item.bookId);
+        });
+      }
+    });
+    return purchasedIds;
+  }, [orders]);
+
+  // Filter books to only show purchased books
+  const purchasedBooks = useMemo(() => {
+    return books.filter((book) => purchasedBookIds.has(book.id));
+  }, [books, purchasedBookIds]);
+
+  // Filter progress entries to only show entries for purchased books
+  const filteredEntries = useMemo(() => {
+    return entries.filter((entry) => {
+      // Check if the entry's bookId is in purchased books
+      return purchasedBookIds.has(entry.bookId);
+    });
+  }, [entries, purchasedBookIds]);
+
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [progressRes, booksRes] = await Promise.all([progressApi.getAll(), booksApi.getAll()]);
+      const [progressRes, booksRes, ordersRes] = await Promise.all([
+        progressApi.getAll(),
+        booksApi.getAll(),
+        ordersApi.getAll(),
+      ]);
       setEntries(progressRes.data || []);
       setBooks(booksRes.data || []);
+      setOrders(ordersRes.data || []);
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to load progress');
     } finally {
@@ -96,7 +128,7 @@ export default function SchoolProgress() {
   };
 
   const overallProgress =
-    entries.length > 0 ? entries.reduce((sum, item) => sum + (item.status === 'completed' ? 100 : item.status === 'in-progress' ? 50 : 0), 0) / entries.length : 0;
+    filteredEntries.length > 0 ? filteredEntries.reduce((sum, item) => sum + (item.status === 'completed' ? 100 : item.status === 'in-progress' ? 50 : 0), 0) / filteredEntries.length : 0;
 
   const statusColor = (status: ProgressEntry['status']) => {
     switch (status) {
@@ -142,7 +174,7 @@ export default function SchoolProgress() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">
-              {entries.filter((entry) => entry.status === 'in-progress').length}
+              {filteredEntries.filter((entry) => entry.status === 'in-progress').length}
             </div>
             <p className="text-sm text-muted-foreground mt-1">Currently studying</p>
           </CardContent>
@@ -155,7 +187,7 @@ export default function SchoolProgress() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">
-              {entries.filter((entry) => entry.status === 'completed').length}
+              {filteredEntries.filter((entry) => entry.status === 'completed').length}
             </div>
             <p className="text-sm text-muted-foreground mt-1">Finished successfully</p>
           </CardContent>
@@ -172,13 +204,15 @@ export default function SchoolProgress() {
               <Loader2 className="w-4 h-4 animate-spin" />
               Loading progress...
             </div>
-          ) : entries.length === 0 ? (
+          ) : filteredEntries.length === 0 ? (
             <div className="text-center text-muted-foreground py-8">
-              No progress entries yet. Click “Add Progress” to get started.
+              {purchasedBooks.length === 0 
+                ? 'You haven\'t purchased any books yet. Purchase books to track your progress.'
+                : 'No progress entries yet. Click "Add Progress" to get started.'}
             </div>
           ) : (
             <div className="space-y-6">
-              {entries.map((entry) => (
+              {filteredEntries.map((entry) => (
                 <div key={entry.id} className="space-y-2 border rounded-xl p-4">
                   <div className="flex items-start justify-between gap-3 flex-wrap">
                     <div>
@@ -226,18 +260,24 @@ export default function SchoolProgress() {
             {!editingEntry && (
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground">Book</label>
-                <select
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  value={selectedBookId}
-                  onChange={(event) => setSelectedBookId(event.target.value)}
-                >
-                  <option value="">Select a book</option>
-                  {books.map((book) => (
-                    <option key={book.id} value={book.id}>
-                      {book.title}
-                    </option>
-                  ))}
-                </select>
+                {purchasedBooks.length === 0 ? (
+                  <div className="text-sm text-muted-foreground p-3 border rounded-md bg-muted/50">
+                    You need to purchase books first before you can track progress.
+                  </div>
+                ) : (
+                  <select
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    value={selectedBookId}
+                    onChange={(event) => setSelectedBookId(event.target.value)}
+                  >
+                    <option value="">Select a book</option>
+                    {purchasedBooks.map((book) => (
+                      <option key={book.id} value={book.id}>
+                        {book.title}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
             )}
             <div className="space-y-2">

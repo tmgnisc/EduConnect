@@ -1,5 +1,6 @@
 const {
   getEntriesBySchool,
+  getEntriesByPublisher,
   createEntry,
   updateEntry,
   deleteEntry,
@@ -75,8 +76,18 @@ const removeEntry = async (req, res, next) => {
   }
 };
 
+const listEntriesByPublisher = async (req, res, next) => {
+  try {
+    const entries = await getEntriesByPublisher(req.user.id);
+    res.json({ data: entries });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   listEntries,
+  listEntriesByPublisher,
   addEntry,
   editEntry,
   removeEntry,

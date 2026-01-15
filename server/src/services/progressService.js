@@ -53,10 +53,22 @@ const deleteEntry = async (id) => {
   await pool.query('DELETE FROM progress_entries WHERE id = ?', [id]);
 };
 
+const getEntriesByPublisher = async (publisherId) => {
+  const [rows] = await pool.query(
+    `SELECT pe.* FROM progress_entries pe
+     INNER JOIN books b ON pe.book_id = b.id
+     WHERE b.publisher_id = ?
+     ORDER BY pe.updated_at DESC`,
+    [publisherId]
+  );
+  return rows.map(mapEntry);
+};
+
 module.exports = {
   mapEntry,
   getEntryById,
   getEntriesBySchool,
+  getEntriesByPublisher,
   createEntry,
   updateEntry,
   deleteEntry,

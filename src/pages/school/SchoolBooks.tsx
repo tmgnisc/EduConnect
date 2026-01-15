@@ -3,10 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { BookOpen, Search, ShoppingCart, Eye, Loader2, User, Mail, Building2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import { booksApi, usersApi } from '@/services/api';
-import { Book, User as UserType } from '@/types';
+import { BookOpen, Search, ShoppingCart, Eye, Loader2, User, Mail, Building2, LibraryBig, CheckCircle2 } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { booksApi, usersApi, ordersApi } from '@/services/api';
+import { Book, User as UserType, Order } from '@/types';
 import { toast } from 'sonner';
 import { useCartStore } from '@/store/cartStore';
 
@@ -18,6 +18,8 @@ export default function SchoolBooks() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [publisher, setPublisher] = useState<UserType | null>(null);
   const [loadingPublisher, setLoadingPublisher] = useState(false);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [bookView, setBookView] = useState<'all' | 'my'>('all');
   const addToCart = useCartStore((state) => state.addItem);
 
   useEffect(() => {
@@ -33,6 +35,18 @@ export default function SchoolBooks() {
       }
     };
     fetchBooks();
+  }, []);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const response = await ordersApi.getAll();
+        setOrders(response.data || []);
+      } catch (error: any) {
+        console.error('Failed to load orders:', error);
+      }
+    };
+    fetchOrders();
   }, []);
 
   useEffect(() => {
@@ -53,14 +67,39 @@ export default function SchoolBooks() {
     fetchPublisher();
   }, [selectedBook]);
 
-  const filteredBooks = books.filter(
-    (book) =>
-      book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      book.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      book.grade.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      book.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      book.publisherName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Get all purchased book IDs from orders
+  const purchasedBookIds = useMemo(() => {
+    const purchasedIds = new Set<string>();
+    orders.forEach((order) => {
+      if (order.items && order.items.length > 0) {
+        order.items.forEach((item) => {
+          purchasedIds.add(item.bookId);
+        });
+      }
+    });
+    return purchasedIds;
+  }, [orders]);
+
+  // Get all purchased books
+  const myBooks = useMemo(() => {
+    return books.filter((book) => purchasedBookIds.has(book.id));
+  }, [books, purchasedBookIds]);
+
+  const filteredBooks = useMemo(() => {
+    let bookList = bookView === 'my' ? myBooks : books;
+    
+    if (!searchTerm) return bookList;
+    
+    const term = searchTerm.toLowerCase();
+    return bookList.filter(
+      (book) =>
+        book.title.toLowerCase().includes(term) ||
+        book.subject.toLowerCase().includes(term) ||
+        book.grade.toLowerCase().includes(term) ||
+        book.author.toLowerCase().includes(term) ||
+        book.publisherName.toLowerCase().includes(term)
+    );
+  }, [books, myBooks, bookView, searchTerm]);
 
   const handleViewDetails = (book: Book) => {
     setSelectedBook(book);
@@ -68,6 +107,11 @@ export default function SchoolBooks() {
   };
 
   const handleAddToCart = (book: Book) => {
+    // Check if book is already purchased
+    if (purchasedBookIds.has(book.id)) {
+      toast.error(`"${book.title}" is already in your library. You cannot purchase it again.`);
+      return;
+    }
     addToCart(book);
     toast.success(`Added "${book.title}" to cart`);
   };
@@ -85,8 +129,28 @@ export default function SchoolBooks() {
 
       <Card className="shadow-soft">
         <CardHeader>
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <CardTitle>Available Books</CardTitle>
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <CardTitle>{bookView === 'my' ? 'My Books' : 'Available Books'}</CardTitle>
+              <div className="flex gap-2 items-center">
+                <Button
+                  variant={bookView === 'all' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setBookView('all')}
+                >
+                  <BookOpen className="w-4 h-4 mr-2" />
+                  All Books
+                </Button>
+                <Button
+                  variant={bookView === 'my' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setBookView('my')}
+                >
+                  <LibraryBig className="w-4 h-4 mr-2" />
+                  My Books ({myBooks.length})
+                </Button>
+              </div>
+            </div>
             <div className="relative w-full md:w-64">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
@@ -105,85 +169,113 @@ export default function SchoolBooks() {
             </div>
           ) : filteredBooks.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
-              {searchTerm ? 'No books match your search.' : 'No books available at the moment.'}
+              {bookView === 'my' 
+                ? (searchTerm 
+                  ? 'No purchased books match your search.' 
+                  : 'You haven\'t purchased any books yet.')
+                : (searchTerm 
+                  ? 'No books match your search.' 
+                  : 'No books available at the moment.')}
+              {bookView === 'my' && !searchTerm && (
+                <p className="text-sm mt-1">Browse all books and add them to your cart to get started.</p>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredBooks.map((book) => (
-                <Card 
-                  key={book.id} 
-                  className="shadow-soft hover:shadow-medium transition-all duration-300 flex flex-col cursor-pointer"
-                  onClick={() => handleViewDetails(book)}
-                >
-                  {book.coverImage ? (
-                    <img
-                      src={book.coverImage}
-                      alt={book.title}
-                      className="h-48 w-full object-cover rounded-t-xl"
-                    />
-                  ) : (
-                    <div className="w-full h-48 bg-gradient-primary rounded-t-xl flex items-center justify-center">
-                      <BookOpen className="w-12 h-12 text-white" />
-                    </div>
-                  )}
-                  <CardHeader>
-                    <CardTitle className="text-lg line-clamp-2">{book.title}</CardTitle>
-                    <p className="text-sm text-muted-foreground mt-1">by {book.author}</p>
-                    <div className="flex items-center gap-2 mt-2 flex-wrap">
-                      <Badge variant="outline" className="text-xs">
-                        {book.grade}
-                      </Badge>
-                      <Badge variant="outline" className="text-xs">
-                        {book.subject}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="flex-1 flex flex-col justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {book.publisherName}
-                      </p>
-                      {book.description && (
-                        <p className="text-xs text-muted-foreground line-clamp-2 mb-4">
-                          {book.description}
+              {filteredBooks.map((book) => {
+                const isPurchased = purchasedBookIds.has(book.id);
+                return (
+                  <Card 
+                    key={book.id} 
+                    className="shadow-soft hover:shadow-medium transition-all duration-300 flex flex-col cursor-pointer"
+                    onClick={() => handleViewDetails(book)}
+                  >
+                    {book.coverImage ? (
+                      <img
+                        src={book.coverImage}
+                        alt={book.title}
+                        className="h-48 w-full object-cover rounded-t-xl"
+                      />
+                    ) : (
+                      <div className="w-full h-48 bg-gradient-primary rounded-t-xl flex items-center justify-center">
+                        <BookOpen className="w-12 h-12 text-white" />
+                      </div>
+                    )}
+                    <CardHeader>
+                      <CardTitle className="text-lg line-clamp-2">{book.title}</CardTitle>
+                      <p className="text-sm text-muted-foreground mt-1">by {book.author}</p>
+                      <div className="flex items-center gap-2 mt-2 flex-wrap">
+                        <Badge variant="outline" className="text-xs">
+                          {book.grade}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {book.subject}
+                        </Badge>
+                        {isPurchased && (
+                          <Badge className="bg-green-500 text-white text-xs">
+                            <CheckCircle2 className="w-3 h-3 mr-1" />
+                            Purchased
+                          </Badge>
+                        )}
+                      </div>
+                    </CardHeader>
+                    <CardContent className="flex-1 flex flex-col justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {book.publisherName}
                         </p>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xl font-bold text-foreground">
-                          NPR {book.price.toFixed(2)}
-                        </span>
+                        {book.description && (
+                          <p className="text-xs text-muted-foreground line-clamp-2 mb-4">
+                            {book.description}
+                          </p>
+                        )}
                       </div>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="flex-1"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleViewDetails(book);
-                          }}
-                        >
-                          <Eye className="w-4 h-4 mr-2" />
-                          Details
-                        </Button>
-                        <Button
-                          size="sm"
-                          className="flex-1"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleAddToCart(book);
-                          }}
-                        >
-                          <ShoppingCart className="w-4 h-4 mr-2" />
-                          Add to Cart
-                        </Button>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xl font-bold text-foreground">
+                            NPR {book.price.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex-1"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewDetails(book);
+                            }}
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            Details
+                          </Button>
+                          <Button
+                            size="sm"
+                            className="flex-1"
+                            disabled={isPurchased}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAddToCart(book);
+                            }}
+                          >
+                            {isPurchased ? (
+                              <>
+                                <CheckCircle2 className="w-4 h-4 mr-2" />
+                                Purchased
+                              </>
+                            ) : (
+                              <>
+                                <ShoppingCart className="w-4 h-4 mr-2" />
+                                Add to Cart
+                              </>
+                            )}
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </CardContent>
@@ -293,7 +385,7 @@ export default function SchoolBooks() {
               </div>
 
               {/* Actions */}
-              <div className="flex gap-3 pt-4 border-t">
+              <div className="flex gap-3 pt-4 border-t items-center">
                 <Button
                   variant="outline"
                   className="flex-1"
@@ -301,15 +393,33 @@ export default function SchoolBooks() {
                 >
                   Close
                 </Button>
+                {selectedBook && purchasedBookIds.has(selectedBook.id) && (
+                  <Badge className="bg-green-500 text-white px-3 py-2 flex items-center mr-auto">
+                    <CheckCircle2 className="w-4 h-4 mr-1" />
+                    Already Purchased
+                  </Badge>
+                )}
                 <Button
                   className="flex-1"
+                  disabled={selectedBook ? purchasedBookIds.has(selectedBook.id) : false}
                   onClick={() => {
-                    handleAddToCart(selectedBook);
-                    setDetailsOpen(false);
+                    if (selectedBook) {
+                      handleAddToCart(selectedBook);
+                      setDetailsOpen(false);
+                    }
                   }}
                 >
-                  <ShoppingCart className="w-4 h-4 mr-2" />
-                  Add to Cart
+                  {selectedBook && purchasedBookIds.has(selectedBook.id) ? (
+                    <>
+                      <CheckCircle2 className="w-4 h-4 mr-2" />
+                      Already Purchased
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingCart className="w-4 h-4 mr-2" />
+                      Add to Cart
+                    </>
+                  )}
                 </Button>
               </div>
             </div>
